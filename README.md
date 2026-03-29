@@ -31,10 +31,10 @@ SwipeClean is a **desktop application** that transforms file cleanup from a chor
 |------------------|
 | 🎯 **Faster than manual deletion** – Blast through files in seconds |
 | 🔄 **Undo-friendly** – Change your mind anytime (Ctrl+Z) |
-| 👁️ **Smart previews** – See images, PDFs before deciding |
+| 👁️ **Smart previews** – See images, PDFs, and text/code previews before deciding |
 | ⌨️ **Keyboard shortcuts** – D=Keep, A=Delete, W=Skip |
 | 💾 **Track progress** – See how much space you're freeing |
-| 🛡️ **Safe by default** – Files go to trash, not permanently deleted |
+| 🛡️ **Safety-focused** – Uses system trash flow first, with recovery-friendly behavior |
 | 🎨 **Beautiful dark theme** – Easy on the eyes during long sessions |
 | 🚀 **Lightning fast** – Built on Electron + React |
 
@@ -67,13 +67,13 @@ Pick your sort order and begin the cleanup game.
 | Layer | Technology |
 |-------|-----------|
 | **Desktop Framework** | Electron + electron-vite |
-| **UI Library** | React 18 + TypeScript |
+| **UI Library** | React 19 + TypeScript |
 | **Styling** | Tailwind CSS |
 | **Animations** | Framer Motion |
 | **Icons** | Lucide React |
 | **Database** | Better-SQLite3 |
 | **Image Processing** | Sharp |
-| **Code Style** | ESLint + Prettier |
+| **Code Style** | TypeScript + project conventions |
 
 ---
 
@@ -128,17 +128,16 @@ Customize SwipeClean in the **Settings** screen:
 
 ### Toggle Options
 - 🛡️ **Recursive Scanning** — Go into subfolders
-- 👁️ **Show Previews** — Enable/disable image previews
-- 📋 **Confirm on Delete** — Ask before deleting
+- 👁️ **Reveal System Files** — Include hidden/system files in scan
+- 📋 **Confirm Before Delete** — Ask before deleting
 
 ### Performance Tuning
-- 🖼️ **Preview Quality** — Adjust image resolution
-- ↪️ **Rotation Detection** — Auto-rotate image previews
-- 🎚️ **Cache Size** — Limit preview storage
+- ↩️ **Undo History Depth** — Limit how many actions can be undone
+- 🎚️ **Preview Cache Limit** — Control cached preview capacity
 
 ### Danger Zone
 - 🗑️ **Clear Preview Cache** — Free up disk space
-- ⚠️ **Advanced Settings** — Debug options
+- ♻️ **Restore Defaults** — Reset settings to baseline
 
 ---
 
@@ -177,6 +176,7 @@ swipeclean/
 │   │   └── database.ts          # SQLite session storage
 │   ├── renderer/                # React app
 │   │   ├── pages/
+│   │   │   ├── About.tsx        # About and support links
 │   │   │   ├── Home.tsx         # Folder selection
 │   │   │   ├── Session.tsx      # Main swipe interface
 │   │   │   ├── Summary.tsx      # Results & stats
@@ -210,9 +210,8 @@ Contributions welcome! Here's how:
 
 ### Code Style
 - TypeScript for type safety
-- ESLint + Prettier for formatting
+- Consistent formatting and naming conventions
 - Descriptive commit messages
-- No console.logs in production code
 
 ---
 
