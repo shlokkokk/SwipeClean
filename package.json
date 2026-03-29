@@ -69,7 +69,6 @@
     },
     "win": {
       "icon": "assets/icon.ico",
-      "signAndEditExecutable": false,
       "target": [
         {
           "target": "nsis",
