@@ -9,10 +9,10 @@ import {
   SkipForward,
   Folder,
   Keyboard,
-  Info,
-  Zap,
   RotateCcw,
-  LogOut
+  LogOut,
+  Gamepad2,
+  Target
 } from 'lucide-react';
 import SwipeCard from '../components/SwipeCard';
 import Tooltip from '../components/Tooltip';
@@ -55,6 +55,7 @@ const Session: React.FC<SessionProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
 
   const currentFile = fileList[currentIndex];
+  // Calculate progress on 0 to 100 scale based on index + 1
   const progress = files.length > 0 ? ((currentIndex) / files.length) * 100 : 0;
   const folderName = folderPath.split(/[/\\]/).pop() || 'Unknown';
 
@@ -263,7 +264,7 @@ const Session: React.FC<SessionProps> = ({
 
   const handleSessionComplete = async () => {
     setIsProcessing(true);
-    // Process remaining pendings in undo stack (older ones are already trashed dynamically)
+    // Process remaining pendings in undo stack
     const pendingDeletesInStack = undoStack
       .filter(a => a.newStatus === 'deleted')
       .map(a => fileList.find(f => f.id === a.fileId))
@@ -294,30 +295,30 @@ const Session: React.FC<SessionProps> = ({
           className="text-center"
         >
           <motion.div 
-            className="w-24 h-24 rounded-3xl bg-emerald-500/20 flex items-center justify-center mx-auto mb-6 shadow-inner border border-emerald-500/30"
-            animate={{ scale: [1, 1.05, 1] }}
+            className="w-24 h-24 rounded-[24px] bg-[#00e5ff]/10 flex items-center justify-center mx-auto mb-6 border border-[#00e5ff]/20"
+            animate={{ scale: [1, 1.05, 1], boxShadow: ["0 0 0 rgba(0,229,255,0)", "0 0 20px rgba(0,229,255,0.2)", "0 0 0 rgba(0,229,255,0)"] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <Check className="w-12 h-12 text-emerald-400" />
+            <Gamepad2 className="w-12 h-12 text-[#00e5ff]" />
           </motion.div>
-          <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Session Complete</h2>
-          <p className="text-slate-400 mb-8 max-w-sm mx-auto">Great work. You've reviewed every file in this folder.</p>
+          <h2 className="text-3xl font-black text-white mb-2 tracking-widest uppercase">Stage Cleared</h2>
+          <p className="text-slate-400 mb-8 max-w-sm mx-auto uppercase text-xs tracking-widest font-bold">All targets analyzed.</p>
           <button
             onClick={handleSessionComplete}
             disabled={isProcessing}
-            className={`px-8 py-4 bg-linear-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-2xl transition-all duration-300 shadow-xl shadow-indigo-500/25 flex items-center gap-3 mx-auto ${isProcessing ? 'opacity-70 cursor-not-allowed' : 'hover:from-indigo-400 hover:to-purple-500 hover:shadow-2xl hover:shadow-indigo-500/40'}`}
+            className={`px-8 py-4 bg-[#0a1120] border-2 border-[#00e5ff] text-white font-black rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(0,229,255,0.3)] flex items-center justify-center gap-3 mx-auto uppercase tracking-widest ${isProcessing ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#00e5ff]/20 hover:shadow-[0_0_25px_rgba(0,229,255,0.5)]'}`}
           >
             {isProcessing ? (
-              <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-[#00e5ff]" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
             ) : (
-              <Zap className="w-5 h-5" />
+              <Gamepad2 className="w-5 h-5 text-[#00e5ff]" />
             )}
-            {isProcessing ? 'Processing cleanup...' : 'View Summary'}
+            {isProcessing ? 'Syncing...' : 'View Stats'}
           </button>
-          <div className="mt-6 flex justify-center">
+          <div className="mt-8 flex justify-center">
             <Tooltip 
               text={getUndoTooltip()} 
               position="bottom" 
@@ -326,14 +327,14 @@ const Session: React.FC<SessionProps> = ({
               <button
                 onClick={handleUndo}
                 disabled={undoStack.length === 0 || isProcessing}
-                className={`text-sm font-medium flex items-center justify-center gap-2 outline-none transition-colors ${
+                className={`text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 outline-none transition-colors ${
                   undoStack.length === 0 || isProcessing
-                    ? 'text-slate-600 cursor-not-allowed opacity-50'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'text-slate-700 cursor-not-allowed opacity-50'
+                    : 'text-[#00e5ff]/80 hover:text-[#00e5ff]'
                 }`}
               >
-                <RotateCcw className="w-4 h-4" />
-                Undo Last Action
+                <RotateCcw className="w-3.5 h-3.5" />
+                CTRL+Z Undo
               </button>
             </Tooltip>
           </div>
@@ -343,84 +344,67 @@ const Session: React.FC<SessionProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* ── Header ── */}
-      <header className="flex items-center justify-between px-8 py-6 border-b border-white/5 z-20">
-        <div className="flex items-center gap-4">
-          <Tooltip text="Return to home" shortcut="Esc" position="bottom">
-            <button
-              onClick={() => setShowExitConfirm(true)}
-              className="p-2 hover:bg-slate-800 rounded-lg transition-all duration-200 group"
-            >
-              <ArrowLeft className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
-            </button>
-          </Tooltip>
-          <div>
-            <h1 className="font-semibold text-white flex items-center gap-2">
-              <Folder className="w-4 h-4 text-indigo-400" />
-              {folderName}
-            </h1>
-            <p className="text-xs text-slate-500">
-              File <span className="text-indigo-400 font-medium">{currentIndex + 1}</span> of <span className="text-slate-300">{files.length}</span>
-            </p>
+    <div className="h-full flex flex-col justify-between">
+      {/* ── Game Controller Header & Top Section ── */}
+      <div className="w-full flex flex-col">
+        <header className="flex items-center justify-between px-8 py-6 z-20">
+          <div className="flex flex-1 items-start gap-4">
+            <Tooltip text="Return to home" shortcut="Esc" position="bottom">
+              <button
+                onClick={() => setShowExitConfirm(true)}
+                className="w-11 h-11 bg-[#0d1320] border border-white/5 rounded-xl hover:bg-[#151f32] hover:border-[#00e5ff]/30 flex items-center justify-center transition-all duration-200 group shadow-[0_5px_15px_rgba(0,0,0,0.3)]"
+              >
+                <ArrowLeft className="w-5 h-5 text-slate-500 group-hover:text-[#00e5ff] transition-colors" />
+              </button>
+            </Tooltip>
+            {/* Center aligned title */}
+            <div className="flex flex-col flex-1 justify-center max-w-lg mx-auto pl-16">
+              <h1 className="font-bold text-white text-xl flex items-center gap-2 tracking-widest font-mono">
+                <Folder className="w-5 h-5 text-[#00e5ff]" />
+                {folderName}
+              </h1>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-1 text-left">
+                <span>Target </span>
+                <span className="text-[#00e5ff]">{currentIndex + 1}</span>
+                <span className="mx-1">/</span>
+                <span>{files.length}</span>
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <Tooltip text="View keyboard shortcuts" shortcut="?" position="bottom">
-            <button
+          <Tooltip text="Keyboard Shortcuts" shortcut="?" position="bottom">
+            <button 
               onClick={() => setShowShortcuts(true)}
-              className="p-2 hover:bg-white/5 rounded-xl transition-all duration-200 group"
+              className="w-11 h-11 border border-white/5 rounded-xl bg-[#0d1320] flex items-center justify-center shadow-[0_5px_15px_rgba(0,0,0,0.3)] hover:bg-[#151f32] hover:border-[#00e5ff]/30 transition-all duration-200 group"
             >
-              <Keyboard className="w-5 h-5 text-slate-400 group-hover:text-indigo-400 transition-colors" />
+              <Gamepad2 className="w-5 h-5 text-slate-500 group-hover:text-[#00e5ff] transition-colors" />
             </button>
           </Tooltip>
-        </div>
-      </header>
+        </header>
 
-      {/* ── Progress Bar ── */}
-      <div className="px-8 py-4 w-full max-w-lg mx-auto z-20">
-        <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-3">
-          <span>Progress</span>
-          <span className="text-indigo-400">{Math.round(progress)}%</span>
-        </div>
-        <div className="h-1.5 w-full bg-slate-800/50 rounded-full overflow-hidden border border-white/5 shadow-inner">
-          <motion.div
-            className="h-full bg-linear-to-r from-indigo-500 via-purple-500 to-indigo-500 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%`, backgroundPosition: ['0% 50%', '100% 50%'] }}
-            transition={{ width: { duration: 0.5, ease: 'easeOut' }, backgroundPosition: { duration: 2, repeat: Infinity, ease: 'linear' } }}
-            style={{ backgroundSize: '200% 100%' }}
-          />
+        {/* ── Center Target Progress ── */}
+        <div className="gc-progress-container z-20 px-8 py-0">
+          <div className="gc-progress-header">
+            <div className="flex items-center gap-2 text-[#00e5ff]">
+              <Target className="w-4 h-4" />
+              <span>PROGRESS</span>
+            </div>
+            <span className="text-[#00e5ff] font-mono text-[11px]">{Math.round(progress)}%</span>
+          </div>
+          <div className="gc-progress-track">
+            <motion.div
+              className="gc-progress-fill"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ ease: 'easeOut', duration: 0.3 }}
+            >
+              {progress > 0 && <div className="gc-progress-glow" />}
+            </motion.div>
+          </div>
         </div>
       </div>
 
-      {/* ── First-Time Guide ── */}
-      <AnimatePresence>
-        {showGuide && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: 'auto' }}
-            exit={{ opacity: 0, y: -10, height: 0 }}
-            className="mx-6 mb-2"
-          >
-            <div className="flex items-center gap-3 px-5 py-4 bg-indigo-500/10 border border-indigo-500/20 shadow-lg rounded-2xl mx-auto max-w-lg mb-4">
-              <Info className="w-5 h-5 text-indigo-400 shrink-0" />
-              <p className="text-[13px] text-indigo-300">
-                <span className="font-bold">Swipe right</span> to keep, <span className="font-bold">left</span> to delete, <span className="font-bold">up</span> to skip
-              </p>
-              <button 
-                onClick={() => setShowGuide(false)}
-                className="p-1 hover:bg-indigo-500/20 rounded-lg transition-colors shrink-0 ml-auto"
-              >
-                <X className="w-3.5 h-3.5 text-indigo-400" />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Main Content (Real Stack) ── */}
+      {/* ── Main Stack Display ── */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
         <AnimatePresence initial={false} mode="popLayout">
           {fileList.slice(currentIndex, currentIndex + 4).reverse().map((file, i, arr) => {
@@ -428,24 +412,24 @@ const Session: React.FC<SessionProps> = ({
             const stackDepth = arr.length - 1 - i;
             const direction = exitDirections[file.id] || null;
             
-            // Scattered desk aesthetic: Fanning out perfectly from exactly behind the main box
-            const cornerSign = stackDepth % 2 === 0 ? 1 : -1;
-            const xOffset = stackDepth === 0 ? 0 : cornerSign * stackDepth * 24;
-            const rotateAngle = stackDepth === 0 ? 0 : cornerSign * stackDepth * 4;
-            
-            // Because dummy and real cards now have identical total heights, 
-            // relying purely on scale shrinking to exactly center it behind the main card seamlessly!
-            const yOffset = 0;
-            
+            // Floating depth calculations
             const scale = 1 - Math.max(0, stackDepth * 0.05);
             const stackOpacity = Math.max(0, 1 - stackDepth * 0.25);
+            
+            // Fanning effect with alternating sign
+            const cornerSign = stackDepth % 2 === 0 ? 1 : -1;
+            const xOffset = stackDepth === 0 ? 0 : cornerSign * stackDepth * 20;
+            // Only rotate if not the top card
+            const rotateAngle = stackDepth === 0 ? 0 : cornerSign * stackDepth * 3;
+            const yOffset = stackDepth * -6; // Slight arc up for bottom cards
+
             const zIndex = 10 - stackDepth;
 
             return (
               <motion.div
                 key={file.id}
                 custom={direction}
-                initial={{ opacity: 0, scale: 0.8, y: stackDepth * -10, x: xOffset * 1.5 }}
+                initial={{ opacity: 0, scale: 0.8, y: stackDepth * 20, x: xOffset * 1.5 }}
                 animate={{ 
                   opacity: stackOpacity,
                   scale: scale,
@@ -457,12 +441,12 @@ const Session: React.FC<SessionProps> = ({
                 transition={{ type: 'spring', stiffness: 320, damping: 35 }}
                 exit={{
                   opacity: 0,
-                  x: direction === 'right' ? 400 : direction === 'left' ? -400 : 0,
-                  y: direction === 'up' ? -400 : 20,
-                  rotate: direction === 'right' ? 15 : direction === 'left' ? -15 : 0,
-                  transition: { duration: 0.28, ease: 'easeOut' }
+                  x: direction === 'right' ? 500 : direction === 'left' ? -500 : 0,
+                  y: direction === 'up' ? -500 : 50,
+                  rotate: direction === 'right' ? 20 : direction === 'left' ? -20 : 0,
+                  transition: { duration: 0.3, ease: 'easeOut' }
                 }}
-                className="absolute w-full max-w-xl z-10"
+                className="absolute w-full z-10 flex items-center justify-center"
                 style={{ pointerEvents: isTop ? 'auto' : 'none', transformOrigin: 'center center' }}
               >
                 {isTop ? (
@@ -475,30 +459,34 @@ const Session: React.FC<SessionProps> = ({
                     onOpenFile={handleOpenFile}
                   />
                 ) : (
-                  <div className="relative w-full mx-auto">
-                    <div className="rounded-3xl border border-white/5 bg-slate-900/40 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col">
-                      {/* Top section: Preview skeleton */}
-                      <div className="h-112 w-full bg-slate-950/40 border-b border-white/5 relative flex items-center justify-center">
-                        <div className="w-20 h-20 rounded-3xl bg-slate-800/40 border border-white/10 shadow-inner" />
-                        <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=')] mask-[linear-gradient(to_bottom,white,transparent)] pointer-events-none" />
+                  <div className="relative w-full max-w-2xl mx-auto flex flex-col items-center">
+                    <div className="gc-card w-full overflow-hidden flex flex-col opacity-60 pointer-events-none">
+                      <div className="gc-brackets absolute inset-0 pointer-events-none z-20 overflow-hidden rounded-xl">
+                        <div className="absolute top-0 left-0 w-8 h-8 border-t-[1.5px] border-l-[1.5px] border-[#00e5ff] rounded-tl-[11px] opacity-70" />
+                        <div className="absolute top-0 right-0 w-8 h-8 border-t-[1.5px] border-r-[1.5px] border-[#00e5ff] rounded-tr-[11px] opacity-70" />
+                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-[1.5px] border-l-[1.5px] border-[#00e5ff] rounded-bl-[11px] opacity-70" />
+                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-[1.5px] border-r-[1.5px] border-[#00e5ff] rounded-br-[11px] opacity-70" />
                       </div>
-                      {/* Bottom section: Metadata skeleton matching SwipeCard dimensions */}
-                      <div className="p-6 flex flex-col justify-start">
-                        <div className="w-20 h-5 bg-slate-800/40 rounded-lg mb-3" />
-                        <div className="w-3/4 h-7 bg-slate-800/50 rounded-lg mb-1.5" />
-                        <div className="w-full h-3 bg-slate-800/30 rounded-md mb-2" />
-                        <div className="w-1/2 h-3 bg-slate-800/20 rounded-md mb-2.5" />
-                        <div className="w-1/3 h-4 bg-slate-800/40 rounded-lg mt-1" />
+                      <div className="gc-preview-area h-104 w-full flex items-center justify-center relative p-1">
+                        <div className="gc-icon-container" />
+                      </div>
+                      <div className="gc-file-info px-6 py-5 flex items-center gap-6">
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-1.5">
+                            <div className="w-12 h-4 bg-white/5 rounded" />
+                            <div className="w-8 h-3 bg-white/5 rounded" />
+                          </div>
+                          <div className="w-48 h-6 bg-white/10 rounded mb-1" />
+                          <div className="w-64 h-3 bg-white/5 rounded" />
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0 border-l border-white/5 pl-6">
+                          <div className="w-16 h-4 bg-white/10 rounded" />
+                          <div className="w-20 h-3 bg-white/5 rounded mt-1" />
+                        </div>
                       </div>
                     </div>
-                    {/* Invisible geometric clone of Action Buttons to guarantee 100% pixel-perfect identical flex container alignment */}
-                    <div className="flex items-end justify-center gap-7 mt-10 invisible pointer-events-none">
-                      <div className="flex flex-col items-center gap-1.5"><div className="w-14 h-14" /><span className="text-[11px] font-bold uppercase tracking-widest">Undo</span></div>
-                      <div className="flex flex-col items-center gap-2"><div className="w-16 h-16" /><span className="text-[11px] font-bold uppercase tracking-widest">Delete</span></div>
-                      <div className="flex flex-col items-center gap-2"><div className="w-14 h-14" /><span className="text-[11px] font-bold uppercase tracking-widest">Skip</span></div>
-                      <div className="flex flex-col items-center gap-2"><div className="w-16 h-16" /><span className="text-[11px] font-bold uppercase tracking-widest">Keep</span></div>
-                      <div className="flex flex-col items-center gap-2"><div className="w-14 h-14" /><span className="text-[11px] font-bold uppercase tracking-widest">Open</span></div>
-                    </div>
+                    {/* Ghost button container to keep heights identical */}
+                    <div className="relative flex justify-center items-end w-full mt-8 h-36 invisible pointer-events-none" />
                   </div>
                 )}
               </motion.div>
@@ -507,70 +495,74 @@ const Session: React.FC<SessionProps> = ({
         </AnimatePresence>
       </div>
 
-      {/* ── Stats Footer ── */}
-      <footer className="px-8 py-6 border-t border-white/5 z-20">
-        <div className="flex items-center justify-center gap-6">
-          <Tooltip text="Files you chose to keep" shortcut="→ / D" position="top">
-            <div className="flex items-center gap-2 text-green-400 cursor-default">
-              <Check className="w-4 h-4" />
+      {/* ── Stats HUD Footer ── */}
+      <footer className="px-8 pb-8 pt-4 z-20 border-t border-white/5 bg-[#0a0e17]/50 mt-auto">
+        <div className="gc-stats-bar uppercase">
+          <Tooltip text="Files you chose to keep" shortcut="→ / B" position="top">
+            <div className="gc-stat-item">
+              <div className="gc-stat-icon-wrapper border-emerald-500/30 bg-emerald-500/10">
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+              </div>
               <motion.span 
                 key={keptCount} 
-                className="font-bold text-lg"
-                initial={{ scale: 1.3, opacity: 0.5 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.3 }}
+                className="gc-stat-value"
+                initial={{ scale: 1.4, color: '#00e5ff' }}
+                animate={{ scale: 1, color: '#fff' }}
               >
                 {keptCount}
               </motion.span>
-              <span className="text-slate-500 text-[11px] font-bold uppercase tracking-widest">Kept</span>
+              <span className="text-[10px] text-slate-500 font-bold">Kept</span>
             </div>
           </Tooltip>
           
-          <Tooltip text="Files moved to trash" shortcut="← / A" position="top">
-            <div className="flex items-center gap-2 text-red-400 cursor-default">
-              <Trash2 className="w-4 h-4" />
+          <Tooltip text="Files moved to trash" shortcut="← / X" position="top">
+            <div className="gc-stat-item border-l border-white/5 pl-8">
+              <div className="gc-stat-icon-wrapper border-rose-500/30 bg-rose-500/10">
+                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+              </div>
               <motion.span 
                 key={deletedCount} 
-                className="font-bold text-lg"
-                initial={{ scale: 1.3, opacity: 0.5 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.3 }}
+                className="gc-stat-value"
+                initial={{ scale: 1.4, color: '#00e5ff' }}
+                animate={{ scale: 1, color: '#fff' }}
               >
                 {deletedCount}
               </motion.span>
-              <span className="text-slate-500 text-[11px] font-bold uppercase tracking-widest">Deleted</span>
+              <span className="text-[10px] text-slate-500 font-bold">Del</span>
             </div>
           </Tooltip>
           
-          <Tooltip text="Files skipped for later" shortcut="↑ / W" position="top">
-            <div className="flex items-center gap-2 text-blue-400 cursor-default">
-              <SkipForward className="w-4 h-4" />
+          <Tooltip text="Files skipped for later" shortcut="↑ / Y" position="top">
+            <div className="gc-stat-item border-l border-white/5 pl-8">
+              <div className="gc-stat-icon-wrapper border-blue-500/30 bg-blue-500/10">
+                <SkipForward className="w-3.5 h-3.5 text-blue-400" />
+              </div>
               <motion.span 
                 key={skippedCount} 
-                className="font-bold text-lg"
-                initial={{ scale: 1.3, opacity: 0.5 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.3 }}
+                className="gc-stat-value"
+                initial={{ scale: 1.4, color: '#00e5ff' }}
+                animate={{ scale: 1, color: '#fff' }}
               >
                 {skippedCount}
               </motion.span>
-              <span className="text-slate-500 text-[11px] font-bold uppercase tracking-widest">Skipped</span>
+              <span className="text-[10px] text-slate-500 font-bold">Skip</span>
             </div>
           </Tooltip>
           
           <Tooltip text="Disk space freed by deletions" position="top">
-            <div className="flex items-center gap-2 text-purple-400 cursor-default">
-              <HardDrive className="w-4 h-4" />
+            <div className="gc-stat-item border-l border-white/5 pl-8">
+              <div className="gc-stat-icon-wrapper border-purple-500/30 bg-purple-500/10">
+                <HardDrive className="w-3.5 h-3.5 text-purple-400" />
+              </div>
               <motion.span 
                 key={spaceFreed} 
-                className="font-bold"
-                initial={{ scale: 1.3, opacity: 0.5 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.3 }}
+                className="gc-stat-value"
+                initial={{ scale: 1.2, color: '#00e5ff' }}
+                animate={{ scale: 1, color: '#fff' }}
               >
-                {formatFileSize(spaceFreed)}
+                {formatFileSize(spaceFreed).split(' ')[0]}
               </motion.span>
-              <span className="text-slate-500 text-[11px] font-bold uppercase tracking-widest">Freed</span>
+              <span className="text-[10px] text-slate-500 font-bold">{formatFileSize(spaceFreed).split(' ')[1]} Freed</span>
             </div>
           </Tooltip>
         </div>
@@ -583,42 +575,50 @@ const Session: React.FC<SessionProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-6"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="glass rounded-3xl p-8 max-w-sm w-full border border-white/10 shadow-2xl relative overflow-hidden"
+              className="gc-card p-8 max-w-sm w-full shadow-[0_0_40px_rgba(244,63,94,0.15)] overflow-hidden"
             >
-              <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-red-500 to-orange-500" />
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center border border-red-500/20 shadow-inner">
-                  <Trash2 className="w-7 h-7 text-red-500" />
+              <div className="gc-brackets absolute inset-0 pointer-events-none z-20 overflow-hidden rounded-xl">
+                 <div className="absolute top-0 left-0 w-8 h-8 border-t-[1.5px] border-l-[1.5px] border-rose-500/50 rounded-tl-[11px]" />
+                 <div className="absolute top-0 right-0 w-8 h-8 border-t-[1.5px] border-r-[1.5px] border-rose-500/50 rounded-tr-[11px]" />
+                 <div className="absolute bottom-0 left-0 w-8 h-8 border-b-[1.5px] border-l-[1.5px] border-rose-500/50 rounded-bl-[11px]" />
+                 <div className="absolute bottom-0 right-0 w-8 h-8 border-b-[1.5px] border-r-[1.5px] border-rose-500/50 rounded-br-[11px]" />
+              </div>
+              <div className="flex items-center gap-4 mb-6 relative z-30">
+                <div className="w-14 h-14 rounded-xl bg-rose-500/10 flex items-center justify-center border border-rose-500/30">
+                  <X className="w-7 h-7 text-rose-500" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white tracking-tight">Delete File?</h3>
-                  <p className="text-slate-400 text-[13px]">
-                    This will be moved to system trash
+                  <h3 className="text-lg font-mono font-bold text-white tracking-widest uppercase mb-1">Warning</h3>
+                  <p className="text-rose-400/80 text-[10px] uppercase font-bold tracking-wider">
+                    Delete Target?
                   </p>
                 </div>
               </div>
-              <p className="text-slate-300 bg-slate-900/50 p-4 rounded-xl mb-8 truncate text-sm border border-white/5 font-medium leading-relaxed">
+              <p className="text-slate-300 font-mono text-xs bg-black/30 p-4 rounded-xl mb-8 break-all border border-rose-500/10 leading-relaxed max-h-24 overflow-y-auto relative z-30">
                 {pendingDelete?.name}
               </p>
-              <div className="flex gap-4">
+              <div className="flex gap-4 relative z-30">
                 <button
                   onClick={handleCancelDelete}
-                  className="flex-1 px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl transition-all duration-200 border border-white/5"
+                  className="flex-1 px-5 py-3.5 bg-[#0a1120] hover:bg-[#111827] text-slate-400 font-bold uppercase text-[11px] tracking-widest rounded-xl transition-all duration-200 border border-white/5 focus:outline-none hover:border-slate-500/50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleConfirmDelete}
-                  className="flex-1 px-5 py-3.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-red-500/25"
+                  className="flex-1 px-5 py-3.5 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 text-rose-400 font-black uppercase text-[11px] tracking-widest rounded-xl transition-all duration-200 shadow-[0_0_15px_rgba(244,63,94,0.2)] focus:outline-none focus:bg-rose-500 focus:text-white"
                 >
-                  Delete File
+                  <span className="flex items-center justify-center gap-2">
+                    <X className="w-4 h-4" strokeWidth={3} />
+                    Confirm
+                  </span>
                 </button>
               </div>
             </motion.div>
@@ -633,45 +633,52 @@ const Session: React.FC<SessionProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-6"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="glass rounded-3xl p-8 max-w-sm w-full border border-white/10 shadow-2xl relative overflow-hidden"
+              className="gc-card p-8 max-w-sm w-full shadow-[0_0_40px_rgba(249,115,22,0.15)] relative overflow-hidden"
             >
-              <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-red-500 to-orange-500" />
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center border border-red-500/20 shadow-inner">
-                  <LogOut className="w-7 h-7 text-red-500 ml-1" />
+              <div className="gc-brackets absolute inset-0 pointer-events-none z-20 overflow-hidden rounded-xl">
+                 <div className="absolute top-0 left-0 w-8 h-8 border-t-[1.5px] border-l-[1.5px] border-orange-500/50 rounded-tl-[11px]" />
+                 <div className="absolute top-0 right-0 w-8 h-8 border-t-[1.5px] border-r-[1.5px] border-orange-500/50 rounded-tr-[11px]" />
+                 <div className="absolute bottom-0 left-0 w-8 h-8 border-b-[1.5px] border-l-[1.5px] border-orange-500/50 rounded-bl-[11px]" />
+                 <div className="absolute bottom-0 right-0 w-8 h-8 border-b-[1.5px] border-r-[1.5px] border-orange-500/50 rounded-br-[11px]" />
+              </div>
+              <div className="flex items-center gap-4 mb-6 relative z-30">
+                <div className="w-14 h-14 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/30">
+                  <LogOut className="w-7 h-7 text-orange-500 ml-1" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white tracking-tight">End Session?</h3>
-                  <p className="text-slate-400 text-[13px]">
-                    Return to home screen
+                  <h3 className="text-lg font-mono font-bold text-white tracking-widest uppercase mb-1">Abort Mission?</h3>
+                  <p className="text-orange-400/80 text-[10px] uppercase font-bold tracking-wider">
+                    Return to Menu
                   </p>
                 </div>
               </div>
-              <p className="text-slate-300 bg-slate-900/50 p-4 rounded-xl mb-8 text-sm border border-white/5 font-medium leading-relaxed">
-                Are you sure you want to end the current cleanup session? You will lose your current spot, but any files already permanently trashed will remain deleted.
+              <p className="text-slate-300 bg-black/30 p-4 rounded-xl mb-8 text-xs font-mono border border-orange-500/10 leading-relaxed relative z-30">
+                Are you sure you want to end the current session? You will lose your current spot, but completely deleted targets will remain destroyed.
               </p>
-              <div className="flex gap-4">
+              <div className="flex gap-4 relative z-30">
                 <button
                   onClick={() => setShowExitConfirm(false)}
-                  className="flex-1 px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl transition-all duration-200 border border-white/5"
+                  className="flex-1 px-5 py-3.5 bg-[#0a1120] hover:bg-[#111827] text-slate-400 font-bold uppercase text-[11px] tracking-widest rounded-xl transition-all duration-200 border border-white/5 hover:border-slate-500/50"
                 >
-                  Keep Cleaning
+                  Cancel
                 </button>
                 <button
                   onClick={() => {
                     setShowExitConfirm(false);
                     onBack();
                   }}
-                  className="flex-1 px-5 py-3.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-red-500/25"
+                  className="flex-1 px-5 py-3.5 bg-orange-500/20 border border-orange-500/50 text-orange-400 font-black uppercase text-[11px] tracking-widest rounded-xl transition-all duration-200 shadow-[0_0_15px_rgba(249,115,22,0.2)] hover:bg-orange-500 hover:text-white"
                 >
-                  End Session
+                  <span className="flex items-center justify-center gap-2">
+                    Abandon
+                  </span>
                 </button>
               </div>
             </motion.div>
@@ -686,7 +693,7 @@ const Session: React.FC<SessionProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-6"
             onClick={() => setShowShortcuts(false)}
           >
             <motion.div
@@ -694,74 +701,85 @@ const Session: React.FC<SessionProps> = ({
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="glass rounded-2xl p-6 max-w-md w-full border border-slate-700/30"
+              className="gc-card p-6 max-w-md w-full shadow-[0_0_40px_rgba(0,229,255,0.1)] relative overflow-hidden"
               onClick={e => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Keyboard className="w-5 h-5 text-indigo-400" />
-                  Keyboard Shortcuts
+              <div className="gc-brackets absolute inset-0 pointer-events-none z-20 overflow-hidden rounded-xl">
+                 <div className="absolute top-0 left-0 w-8 h-8 border-t-[1.5px] border-l-[1.5px] border-[#00e5ff]/30 rounded-tl-[11px]" />
+                 <div className="absolute top-0 right-0 w-8 h-8 border-t-[1.5px] border-r-[1.5px] border-[#00e5ff]/30 rounded-tr-[11px]" />
+                 <div className="absolute bottom-0 left-0 w-8 h-8 border-b-[1.5px] border-l-[1.5px] border-[#00e5ff]/30 rounded-bl-[11px]" />
+                 <div className="absolute bottom-0 right-0 w-8 h-8 border-b-[1.5px] border-r-[1.5px] border-[#00e5ff]/30 rounded-br-[11px]" />
+              </div>
+              
+              <div className="flex items-center justify-between mb-6 border-b border-[#00e5ff]/10 pb-4 relative z-30">
+                <h3 className="text-lg font-mono font-bold text-white tracking-widest uppercase flex items-center gap-3">
+                  <Keyboard className="w-5 h-5 text-[#00e5ff]" />
+                  Controls
                 </h3>
                 <button
                   onClick={() => setShowShortcuts(false)}
-                  className="p-2 hover:bg-slate-700/50 rounded-lg transition-all duration-200"
+                  className="p-2 bg-[#0a1120] hover:bg-white/5 rounded-lg transition-all duration-200 border border-white/5 hover:border-[#00e5ff]/20 text-[#00e5ff]/50 hover:text-[#00e5ff]"
                 >
-                  <X className="w-5 h-5 text-slate-400" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* File Actions */}
-              <div className="mb-4">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2.5">File Actions</p>
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-700/30 transition-colors">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-6 h-6 rounded bg-green-500/20 flex items-center justify-center"><Check className="w-3.5 h-3.5 text-green-400" /></div>
-                      <span className="text-slate-300 text-sm">Keep file</span>
+              <div className="mb-6 relative z-30">
+                <p className="text-[10px] font-black text-[#00e5ff]/60 uppercase tracking-[0.2em] mb-4">Core Actions</p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-[#0a1120]/80 border border-white/5 hover:border-emerald-500/30 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center font-black text-emerald-400 text-xs">D</div>
+                      <span className="text-slate-300 text-[11px] uppercase font-bold tracking-wider">Keep Target</span>
                     </div>
-                    <div className="flex gap-1.5">
-                      <kbd className="kbd">→</kbd>
-                      <kbd className="kbd">D</kbd>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-700/30 transition-colors">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-6 h-6 rounded bg-red-500/20 flex items-center justify-center"><X className="w-3.5 h-3.5 text-red-400" /></div>
-                      <span className="text-slate-300 text-sm">Delete file</span>
-                    </div>
-                    <div className="flex gap-1.5">
-                      <kbd className="kbd">←</kbd>
-                      <kbd className="kbd">A</kbd>
+                    <div className="flex gap-2">
+                       <kbd className="kbd border-emerald-500/30 text-emerald-400 bg-emerald-500/5">→</kbd>
+                       <kbd className="kbd border-emerald-500/30 text-emerald-400 bg-emerald-500/5">D</kbd>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-700/30 transition-colors">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-6 h-6 rounded bg-blue-500/20 flex items-center justify-center"><SkipForward className="w-3.5 h-3.5 text-blue-400" /></div>
-                      <span className="text-slate-300 text-sm">Skip file</span>
+                  
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-[#0a1120]/80 border border-white/5 hover:border-rose-500/30 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full border border-rose-500/30 bg-rose-500/10 flex items-center justify-center font-black text-rose-400 text-xs">A</div>
+                      <span className="text-slate-300 text-[11px] uppercase font-bold tracking-wider">Delete Target</span>
                     </div>
-                    <div className="flex gap-1.5">
-                      <kbd className="kbd">↑</kbd>
-                      <kbd className="kbd">W</kbd>
+                    <div className="flex gap-2">
+                       <kbd className="kbd border-rose-500/30 text-rose-400 bg-rose-500/5">←</kbd>
+                       <kbd className="kbd border-rose-500/30 text-rose-400 bg-rose-500/5">A</kbd>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-[#0a1120]/80 border border-white/5 hover:border-blue-500/30 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full border border-blue-500/30 bg-blue-500/10 flex items-center justify-center font-black text-blue-400 text-xs">W</div>
+                      <span className="text-slate-300 text-[11px] uppercase font-bold tracking-wider">Skip Target</span>
+                    </div>
+                    <div className="flex gap-2">
+                       <kbd className="kbd border-blue-500/30 text-blue-400 bg-blue-500/5">↑</kbd>
+                       <kbd className="kbd border-blue-500/30 text-blue-400 bg-blue-500/5">W</kbd>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Other */}
-              <div>
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2.5">Other</p>
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-700/30 transition-colors">
-                    <span className="text-slate-300 text-sm">Open file in default app</span>
-                    <kbd className="kbd">Space</kbd>
+              <div className="relative z-30">
+                <p className="text-[10px] font-black text-[#00e5ff]/60 uppercase tracking-[0.2em] mb-4">Tactics</p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-[#0a1120]/80 border border-white/5">
+                    <div className="flex items-center gap-3">
+                      <div className="px-2 py-1 rounded border border-[#00e5ff]/30 bg-[#00e5ff]/10 flex items-center justify-center font-black text-[#00e5ff] text-[10px]">CTRL+Z</div>
+                      <span className="text-slate-300 text-[11px] uppercase font-bold tracking-wider">Undo Move</span>
+                    </div>
+                    <kbd className="kbd border-[#00e5ff]/30 text-[#00e5ff] bg-[#00e5ff]/5">Ctrl+Z</kbd>
                   </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-700/30 transition-colors">
-                    <span className="text-slate-300 text-sm">Undo last action</span>
-                    <kbd className="kbd">Ctrl+Z</kbd>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-700/30 transition-colors">
-                    <span className="text-slate-300 text-sm">Go back to home</span>
-                    <kbd className="kbd">Esc</kbd>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-[#0a1120]/80 border border-white/5">
+                    <div className="flex items-center gap-3">
+                      <div className="px-2 py-1 rounded border border-[#00e5ff]/30 bg-[#00e5ff]/10 flex items-center justify-center font-black text-[#00e5ff] text-[10px]">SPACE</div>
+                      <span className="text-slate-300 text-[11px] uppercase font-bold tracking-wider">Open File</span>
+                    </div>
+                    <kbd className="kbd border-[#00e5ff]/30 text-[#00e5ff] bg-[#00e5ff]/5">Space</kbd>
                   </div>
                 </div>
               </div>
