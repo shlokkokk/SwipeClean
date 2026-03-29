@@ -5,12 +5,21 @@ on:
       - 'v*'
 
 jobs:
-  release:
+  build:
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            target: win
+            artifact_name: release-windows
+          - os: macos-latest
+            target: mac
+            artifact_name: release-macos
+          - os: ubuntu-latest
+            target: linux
+            artifact_name: release-linux
 
     steps:
       - name: Checkout git repo
@@ -24,7 +33,68 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build/release Electron app
-        run: npm run dist
+      - name: Build Electron app for current platform
+        run: npx electron-builder --${{ matrix.target }} --publish never
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Upload platform artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: |
+            release/*.exe
+            release/*.AppImage
+            release/*.dmg
+            release/*.blockmap
+            release/latest*.yml
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout git repo with tags
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all built artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Generate release notes from commits
+        shell: bash
+        run: |
+          CURRENT_TAG="${GITHUB_REF_NAME}"
+          PREV_TAG=$(git tag --sort=-creatordate | grep -vx "${CURRENT_TAG}" | head -n 1 || true)
+
+          {
+            echo "## What's New"
+            echo
+
+            if [ -n "${PREV_TAG}" ]; then
+              echo "Changes since ${PREV_TAG}:"
+              echo
+              git log "${PREV_TAG}..${CURRENT_TAG}" --pretty=format:'- %s (%h)'
+            else
+              echo "Initial release changes:"
+              echo
+              git log "${CURRENT_TAG}" --pretty=format:'- %s (%h)'
+            fi
+          } > RELEASE_NOTES.md
+
+      - name: Create single draft release with all artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          draft: true
+          body_path: RELEASE_NOTES.md
+          files: |
+            release-assets/*.exe
+            release-assets/*.AppImage
+            release-assets/*.dmg
+            release-assets/*.blockmap
+            release-assets/latest*.yml
