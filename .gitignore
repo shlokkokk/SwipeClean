@@ -49,5 +49,8 @@ coverage/
 tmp/
 temp/
 
+# Private documentation (not for GitHub)
+_private-docs/
+
 # Electron
 electron-builder.env
