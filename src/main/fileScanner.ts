@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
-import trash from 'trash';
+import { shell } from 'electron';
 import crypto from 'crypto';
-import type { FileItem, ScanOptions, SortOrder, FileCategory } from '../shared/types.js';
+import type { FileItem, ScanOptions, FileCategory } from '../shared/types.js';
 
 // System files to filter out
 const SYSTEM_FILES = [
@@ -268,12 +268,24 @@ export class FileScanner {
 
   async moveToTrash(filePath: string): Promise<void> {
     try {
-      // Handle both ESM and CommonJS exports of the trash module
-      const trashFn = (trash as any).default || trash;
-      await trashFn(filePath);
+      await shell.trashItem(filePath);
     } catch (error) {
-      console.error(`Error moving file to trash: ${filePath}`, error);
-      throw error;
+      console.warn(`[FileScanner] shell.trashItem reported error for (${filePath}). Checking if file still exists...`);
+      try {
+        await fs.access(filePath);
+        // File still exists — trash truly failed, so permanently delete it
+        console.log(`[FileScanner] File still exists, falling back to permanent delete: ${filePath}`);
+        await fs.unlink(filePath);
+        console.log(`[FileScanner] Permanent fallback delete succeeded for: ${filePath}`);
+      } catch (fallbackError: any) {
+        if (fallbackError?.code === 'ENOENT') {
+          // File is already gone — shell.trashItem actually worked despite reporting failure
+          console.log(`[FileScanner] File already removed (trash likely succeeded): ${filePath}`);
+        } else {
+          console.error(`[FileScanner] Fallback also failed for: ${filePath}`, fallbackError);
+          throw fallbackError;
+        }
+      }
     }
   }
 
