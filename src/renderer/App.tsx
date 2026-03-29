@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Home from './pages/Home';
 import Session from './pages/Session';
@@ -152,99 +152,109 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white overflow-hidden">
-      <AnimatePresence mode="wait">
-        {currentView === 'home' && (
-          <motion.div
-            key="home"
-            variants={pageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.3 }}
-            className="h-screen"
-          >
-            <Home 
-              onFolderSelect={handleFolderSelect}
-              onOpenSettings={handleOpenSettings}
-            />
-          </motion.div>
-        )}
-        
-        {currentView === 'sorting' && (
-          <motion.div
-            key="sorting"
-            variants={pageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.3 }}
-            className="h-screen flex items-center justify-center"
-          >
-            <SortingModal
-              folderPath={selectedFolder}
-              onConfirm={handleSortingConfirm}
-              onCancel={handleBackToHome}
-            />
-          </motion.div>
-        )}
-        
-        {currentView === 'session' && (
-          <motion.div
-            key="session"
-            variants={pageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.3 }}
-            className="h-screen"
-          >
-            <Session
-              files={files}
-              folderPath={selectedFolder}
-              settings={settings}
-              onComplete={handleSessionComplete}
-              onBack={handleBackToHome}
-            />
-          </motion.div>
-        )}
-        
-        {currentView === 'summary' && (
-          <motion.div
-            key="summary"
-            variants={pageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.3 }}
-            className="h-screen flex items-center justify-center"
-          >
-            <Summary
-              stats={sessionStats}
-              onCleanAnother={handleCleanAnother}
-              onBackToHome={handleBackToHome}
-            />
-          </motion.div>
-        )}
-        
-        {currentView === 'settings' && (
-          <motion.div
-            key="settings"
-            variants={pageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.3 }}
-            className="h-screen"
-          >
-            <Settings
-              settings={settings}
-              onSave={handleSettingsSave}
-              onCancel={handleBackToHome}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div className="app-shell text-slate-200">
+      {/* ── Deep Animated Background ── */}
+      <div className="ambient-bg">
+        <div className="orb-1" />
+        <div className="orb-2" />
+        <div className="orb-3" />
+      </div>
+
+      {/* ── Central Frosted Glass Window ── */}
+      <div className="glass-panel">
+        <AnimatePresence mode="wait">
+          {currentView === 'home' && (
+            <motion.div
+              key="home"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.3 }}
+              className="h-full w-full"
+            >
+              <Home 
+                onFolderSelect={handleFolderSelect}
+                onOpenSettings={handleOpenSettings}
+              />
+            </motion.div>
+          )}
+          
+          {currentView === 'sorting' && (
+            <motion.div
+              key="sorting"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.3 }}
+              className="h-full w-full flex items-center justify-center p-8"
+            >
+              <SortingModal
+                folderPath={selectedFolder}
+                onConfirm={handleSortingConfirm}
+                onCancel={handleBackToHome}
+              />
+            </motion.div>
+          )}
+          
+          {currentView === 'session' && (
+            <motion.div
+              key="session"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.3 }}
+              className="h-full w-full"
+            >
+              <Session
+                files={files}
+                folderPath={selectedFolder}
+                settings={settings}
+                onComplete={handleSessionComplete}
+                onBack={handleBackToHome}
+              />
+            </motion.div>
+          )}
+          
+          {currentView === 'summary' && (
+            <motion.div
+              key="summary"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.3 }}
+              className="h-full w-full flex items-center justify-center p-8"
+            >
+              <Summary
+                stats={sessionStats}
+                onCleanAnother={handleCleanAnother}
+                onBackToHome={handleBackToHome}
+              />
+            </motion.div>
+          )}
+          
+          {currentView === 'settings' && (
+            <motion.div
+              key="settings"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.3 }}
+              className="h-full w-full"
+            >
+              <Settings
+                settings={settings}
+                onSave={handleSettingsSave}
+                onCancel={handleBackToHome}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

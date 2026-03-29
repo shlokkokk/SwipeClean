@@ -1,18 +1,19 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, 
-  Settings, 
   Check, 
   X, 
-  RotateCcw,
   HardDrive,
   Trash2,
   SkipForward,
   Folder,
-  Keyboard
+  Keyboard,
+  Info,
+  Zap
 } from 'lucide-react';
 import SwipeCard from '../components/SwipeCard';
+import Tooltip from '../components/Tooltip';
 import type { FileItem, SwipeDirection, AppSettings, Action } from '@shared/types';
 
 interface SessionProps {
@@ -45,16 +46,35 @@ const Session: React.FC<SessionProps> = ({
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<FileItem | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showGuide, setShowGuide] = useState(true);
+  const [exitDirections, setExitDirections] = useState<Record<string, SwipeDirection>>({});
+  const [isSwipeTransitioning, setIsSwipeTransitioning] = useState(false);
 
   const currentFile = fileList[currentIndex];
   const progress = files.length > 0 ? ((currentIndex) / files.length) * 100 : 0;
   const folderName = folderPath.split(/[/\\]/).pop() || 'Unknown';
+
+  // Auto-dismiss the first-time guide
+  useEffect(() => {
+    if (showGuide) {
+      const timer = setTimeout(() => setShowGuide(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showGuide]);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!currentFile) return;
       if (showConfirmDialog) return;
+      if (isSwipeTransitioning) return;
+
+      const isSwipeOrOpenKey =
+        e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowUp' ||
+        e.key === 'd' || e.key === 'D' || e.key === 'a' || e.key === 'A' ||
+        e.key === 'w' || e.key === 'W' || e.key === ' ';
+
+      if (e.repeat && isSwipeOrOpenKey) return;
 
       switch (e.key) {
         case 'ArrowRight':
@@ -99,10 +119,10 @@ const Session: React.FC<SessionProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentFile, showConfirmDialog, undoStack, currentIndex]);
+  }, [currentFile, showConfirmDialog, undoStack, currentIndex, isSwipeTransitioning]);
 
   const handleSwipe = useCallback((direction: SwipeDirection) => {
-    if (!currentFile) return;
+    if (!currentFile || isSwipeTransitioning) return;
 
     if (direction === 'left' && settings.confirmBeforeDelete) {
       setPendingDelete(currentFile);
@@ -111,10 +131,16 @@ const Session: React.FC<SessionProps> = ({
     }
 
     processSwipe(direction);
-  }, [currentFile, settings.confirmBeforeDelete]);
+  }, [currentFile, settings.confirmBeforeDelete, isSwipeTransitioning]);
 
   const processSwipe = async (direction: SwipeDirection) => {
-    if (!currentFile) return;
+    if (!currentFile || isSwipeTransitioning) return;
+    setIsSwipeTransitioning(true);
+
+    // Dismiss guide on first action
+    if (showGuide) setShowGuide(false);
+
+    setExitDirections(prev => ({ ...prev, [currentFile.id]: direction }));
 
     const action: Action = {
       id: crypto.randomUUID(),
@@ -135,35 +161,37 @@ const Session: React.FC<SessionProps> = ({
       return newStack.slice(0, settings.maxUndoActions);
     });
 
-    // Update stats
+    // Update stats immediately for responsive footer updates.
     if (direction === 'right') {
       setKeptCount(prev => prev + 1);
     } else if (direction === 'left') {
       setDeletedCount(prev => prev + 1);
       setSpaceFreed(prev => prev + currentFile.size);
-      
-      // Move to trash
-      try {
-        await window.electronAPI.moveToTrash(currentFile.path);
-      } catch (error) {
+
+      // Do not block animation on filesystem operations.
+      void window.electronAPI.moveToTrash(currentFile.path).catch((error) => {
         console.error('Error moving to trash:', error);
-      }
+      });
     } else if (direction === 'up') {
       setSkippedCount(prev => prev + 1);
     }
 
-    // Move to next file
-    if (currentIndex < files.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-    } else {
-      // Session complete
-      onComplete({
-        keptCount: direction === 'right' ? keptCount + 1 : keptCount,
-        deletedCount: direction === 'left' ? deletedCount + 1 : deletedCount,
-        skippedCount: direction === 'up' ? skippedCount + 1 : skippedCount,
-        spaceFreed: direction === 'left' ? spaceFreed + currentFile.size : spaceFreed
-      });
-    }
+    // Give AnimatePresence time to play directional exit for all key/button actions.
+    window.setTimeout(() => {
+      if (currentIndex < files.length - 1) {
+        setCurrentIndex(prev => prev + 1);
+        setIsSwipeTransitioning(false);
+      } else {
+        // Session complete
+        onComplete({
+          keptCount: direction === 'right' ? keptCount + 1 : keptCount,
+          deletedCount: direction === 'left' ? deletedCount + 1 : deletedCount,
+          skippedCount: direction === 'up' ? skippedCount + 1 : skippedCount,
+          spaceFreed: direction === 'left' ? spaceFreed + currentFile.size : spaceFreed
+        });
+        setIsSwipeTransitioning(false);
+      }
+    }, 240);
   };
 
   const handleUndo = () => {
@@ -187,7 +215,6 @@ const Session: React.FC<SessionProps> = ({
       setKeptCount(prev => prev - 1);
     } else if (lastAction.newStatus === 'deleted') {
       setDeletedCount(prev => prev - 1);
-      // Note: We can't restore from trash, so we just update the count
     } else if (lastAction.newStatus === 'skipped') {
       setSkippedCount(prev => prev - 1);
     }
@@ -237,15 +264,20 @@ const Session: React.FC<SessionProps> = ({
           animate={{ opacity: 1, scale: 1 }}
           className="text-center"
         >
-          <div className="w-24 h-24 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
-            <Check className="w-12 h-12 text-green-500" />
-          </div>
-          <h2 className="text-3xl font-bold text-white mb-2">All Done!</h2>
-          <p className="text-slate-400 mb-6">You've reviewed all files in this folder.</p>
+          <motion.div 
+            className="w-24 h-24 rounded-3xl bg-emerald-500/20 flex items-center justify-center mx-auto mb-6 shadow-inner border border-emerald-500/30"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <Check className="w-12 h-12 text-emerald-400" />
+          </motion.div>
+          <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Session Complete</h2>
+          <p className="text-slate-400 mb-8 max-w-sm mx-auto">Great work. You've reviewed every file in this folder.</p>
           <button
             onClick={() => onComplete({ keptCount, deletedCount, skippedCount, spaceFreed })}
-            className="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-xl transition-colors"
+            className="px-8 py-4 bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold rounded-2xl transition-all duration-300 shadow-xl shadow-indigo-500/25 hover:shadow-2xl hover:shadow-indigo-500/40 flex items-center gap-3 mx-auto"
           >
+            <Zap className="w-5 h-5" />
             View Summary
           </button>
         </motion.div>
@@ -255,142 +287,252 @@ const Session: React.FC<SessionProps> = ({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+      {/* ── Header ── */}
+      <header className="flex items-center justify-between px-8 py-6 border-b border-white/5 z-20">
         <div className="flex items-center gap-4">
-          <button
-            onClick={onBack}
-            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-slate-400" />
-          </button>
+          <Tooltip text="Return to home" shortcut="Esc" position="bottom">
+            <button
+              onClick={onBack}
+              className="p-2 hover:bg-slate-800 rounded-lg transition-all duration-200 group"
+            >
+              <ArrowLeft className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
+            </button>
+          </Tooltip>
           <div>
             <h1 className="font-semibold text-white flex items-center gap-2">
               <Folder className="w-4 h-4 text-indigo-400" />
               {folderName}
             </h1>
-            <p className="text-xs text-slate-400">
-              File {currentIndex + 1} of {files.length}
+            <p className="text-xs text-slate-500">
+              File <span className="text-indigo-400 font-medium">{currentIndex + 1}</span> of <span className="text-slate-300">{files.length}</span>
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowShortcuts(true)}
-            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
-            title="Keyboard Shortcuts"
-          >
-            <Keyboard className="w-5 h-5 text-slate-400" />
-          </button>
+          <Tooltip text="View keyboard shortcuts" shortcut="?" position="bottom">
+            <button
+              onClick={() => setShowShortcuts(true)}
+              className="p-2 hover:bg-white/5 rounded-xl transition-all duration-200 group"
+            >
+              <Keyboard className="w-5 h-5 text-slate-400 group-hover:text-indigo-400 transition-colors" />
+            </button>
+          </Tooltip>
         </div>
       </header>
 
-      {/* Progress Bar */}
-      <div className="px-6 py-3">
-        <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
+      {/* ── Progress Bar ── */}
+      <div className="px-8 py-4 w-full max-w-lg mx-auto z-20">
+        <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-3">
           <span>Progress</span>
-          <span>{Math.round(progress)}%</span>
+          <span className="text-indigo-400">{Math.round(progress)}%</span>
         </div>
-        <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+        <div className="h-1.5 w-full bg-slate-800/50 rounded-full overflow-hidden border border-white/5 shadow-inner">
           <motion.div
-            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+            className="h-full bg-linear-to-r from-indigo-500 via-purple-500 to-indigo-500 rounded-full"
             initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.3 }}
+            animate={{ width: `${progress}%`, backgroundPosition: ['0% 50%', '100% 50%'] }}
+            transition={{ width: { duration: 0.5, ease: 'easeOut' }, backgroundPosition: { duration: 2, repeat: Infinity, ease: 'linear' } }}
+            style={{ backgroundSize: '200% 100%' }}
           />
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6">
-        <AnimatePresence mode="wait">
+      {/* ── First-Time Guide ── */}
+      <AnimatePresence>
+        {showGuide && (
           <motion.div
-            key={currentFile.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-            className="w-full max-w-md"
+            initial={{ opacity: 0, y: -10, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -10, height: 0 }}
+            className="mx-6 mb-2"
           >
-            <SwipeCard
-              file={currentFile}
-              onSwipe={handleSwipe}
-              onUndo={handleUndo}
-              canUndo={undoStack.length > 0}
-              onOpenFile={handleOpenFile}
-            />
+            <div className="flex items-center gap-3 px-5 py-4 bg-indigo-500/10 border border-indigo-500/20 shadow-lg rounded-2xl mx-auto max-w-lg mb-4">
+              <Info className="w-5 h-5 text-indigo-400 shrink-0" />
+              <p className="text-[13px] text-indigo-300">
+                <span className="font-bold">Swipe right</span> to keep, <span className="font-bold">left</span> to delete, <span className="font-bold">up</span> to skip
+              </p>
+              <button 
+                onClick={() => setShowGuide(false)}
+                className="p-1 hover:bg-indigo-500/20 rounded-lg transition-colors shrink-0 ml-auto"
+              >
+                <X className="w-3.5 h-3.5 text-indigo-400" />
+              </button>
+            </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Main Content (Real Stack) ── */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <AnimatePresence initial={false} mode="popLayout">
+          {fileList.slice(currentIndex, currentIndex + 4).reverse().map((file, i, arr) => {
+            const isTop = i === arr.length - 1;
+            const stackDepth = arr.length - 1 - i;
+            const direction = exitDirections[file.id] || null;
+            const cornerSign = stackDepth === 0 ? 0 : (stackDepth % 2 === 0 ? 1 : -1);
+            const xOffset = stackDepth === 0 ? 0 : cornerSign * (42 + (stackDepth - 1) * 18);
+            const yOffset = stackDepth === 0 ? 0 : stackDepth * 24;
+            const stackOpacity = 1 - stackDepth * 0.22;
+
+            return (
+              <motion.div
+                key={file.id}
+                custom={direction}
+                initial={{ opacity: 0, scale: 0.88, x: stackDepth === 0 ? 0 : cornerSign * 120, y: -80 }}
+                animate={{ 
+                  opacity: stackOpacity,
+                  scale: 1 - stackDepth * 0.045,
+                  x: xOffset,
+                  y: yOffset,
+                  rotate: 0,
+                  zIndex: 10 - stackDepth
+                }}
+                transition={{ type: 'spring', stiffness: 280, damping: 30 }}
+                exit={{
+                  opacity: 0,
+                  x: direction === 'right' ? 400 : direction === 'left' ? -400 : 0,
+                  y: direction === 'up' ? -400 : 20,
+                  rotate: direction === 'right' ? 15 : direction === 'left' ? -15 : 0,
+                  transition: { duration: 0.28, ease: 'easeOut' }
+                }}
+                className="absolute w-full max-w-lg z-10"
+                style={{ pointerEvents: isTop ? 'auto' : 'none' }}
+              >
+                {isTop ? (
+                  <SwipeCard
+                    file={file}
+                    onSwipe={handleSwipe}
+                    onUndo={handleUndo}
+                    canUndo={undoStack.length > 0}
+                    onOpenFile={handleOpenFile}
+                  />
+                ) : (
+                  <div className="relative w-full mx-auto">
+                    <div className="h-112 rounded-3xl border border-white/12 bg-slate-950/35 overflow-hidden">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.1),transparent_48%),radial-gradient(circle_at_70%_75%,rgba(99,102,241,0.08),transparent_44%)]" />
+                      <div className="absolute inset-0 opacity-25 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=')]" />
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
         </AnimatePresence>
       </div>
 
-      {/* Stats Footer */}
-      <footer className="px-6 py-4 border-t border-slate-800">
-        <div className="flex items-center justify-center gap-8">
-          <div className="flex items-center gap-2 text-green-400">
-            <Check className="w-5 h-5" />
-            <span className="font-semibold">{keptCount}</span>
-            <span className="text-slate-400 text-sm">Kept</span>
-          </div>
-          <div className="flex items-center gap-2 text-red-400">
-            <Trash2 className="w-5 h-5" />
-            <span className="font-semibold">{deletedCount}</span>
-            <span className="text-slate-400 text-sm">Deleted</span>
-          </div>
-          <div className="flex items-center gap-2 text-blue-400">
-            <SkipForward className="w-5 h-5" />
-            <span className="font-semibold">{skippedCount}</span>
-            <span className="text-slate-400 text-sm">Skipped</span>
-          </div>
-          <div className="flex items-center gap-2 text-purple-400">
-            <HardDrive className="w-5 h-5" />
-            <span className="font-semibold">{formatFileSize(spaceFreed)}</span>
-            <span className="text-slate-400 text-sm">Freed</span>
-          </div>
+      {/* ── Stats Footer ── */}
+      <footer className="px-8 py-6 border-t border-white/5 z-20">
+        <div className="flex items-center justify-center gap-6">
+          <Tooltip text="Files you chose to keep" shortcut="→ / D" position="top">
+            <div className="flex items-center gap-2 text-green-400 cursor-default">
+              <Check className="w-4 h-4" />
+              <motion.span 
+                key={keptCount} 
+                className="font-bold text-lg"
+                initial={{ scale: 1.3, opacity: 0.5 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                {keptCount}
+              </motion.span>
+              <span className="text-slate-500 text-[11px] font-bold uppercase tracking-widest">Kept</span>
+            </div>
+          </Tooltip>
+          
+          <Tooltip text="Files moved to trash" shortcut="← / A" position="top">
+            <div className="flex items-center gap-2 text-red-400 cursor-default">
+              <Trash2 className="w-4 h-4" />
+              <motion.span 
+                key={deletedCount} 
+                className="font-bold text-lg"
+                initial={{ scale: 1.3, opacity: 0.5 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                {deletedCount}
+              </motion.span>
+              <span className="text-slate-500 text-[11px] font-bold uppercase tracking-widest">Deleted</span>
+            </div>
+          </Tooltip>
+          
+          <Tooltip text="Files skipped for later" shortcut="↑ / W" position="top">
+            <div className="flex items-center gap-2 text-blue-400 cursor-default">
+              <SkipForward className="w-4 h-4" />
+              <motion.span 
+                key={skippedCount} 
+                className="font-bold text-lg"
+                initial={{ scale: 1.3, opacity: 0.5 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                {skippedCount}
+              </motion.span>
+              <span className="text-slate-500 text-[11px] font-bold uppercase tracking-widest">Skipped</span>
+            </div>
+          </Tooltip>
+          
+          <Tooltip text="Disk space freed by deletions" position="top">
+            <div className="flex items-center gap-2 text-purple-400 cursor-default">
+              <HardDrive className="w-4 h-4" />
+              <motion.span 
+                key={spaceFreed} 
+                className="font-bold"
+                initial={{ scale: 1.3, opacity: 0.5 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                {formatFileSize(spaceFreed)}
+              </motion.span>
+              <span className="text-slate-500 text-[11px] font-bold uppercase tracking-widest">Freed</span>
+            </div>
+          </Tooltip>
         </div>
       </footer>
 
-      {/* Confirm Delete Dialog */}
+      {/* ── Confirm Delete Dialog ── */}
       <AnimatePresence>
         {showConfirmDialog && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-6"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6"
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-slate-800 rounded-2xl p-6 max-w-md w-full"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="glass rounded-3xl p-8 max-w-sm w-full border border-white/10 shadow-2xl relative overflow-hidden"
             >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
-                  <Trash2 className="w-6 h-6 text-red-400" />
+              <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-red-500 to-orange-500" />
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center border border-red-500/20 shadow-inner">
+                  <Trash2 className="w-7 h-7 text-red-500" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Delete File?</h3>
-                  <p className="text-slate-400 text-sm">
-                    Are you sure you want to move this file to trash?
+                  <h3 className="text-xl font-bold text-white tracking-tight">Delete File?</h3>
+                  <p className="text-slate-400 text-[13px]">
+                    This will be moved to system trash
                   </p>
                 </div>
               </div>
-              <p className="text-slate-300 bg-slate-700/50 p-3 rounded-lg mb-6 truncate">
+              <p className="text-slate-300 bg-slate-900/50 p-4 rounded-xl mb-8 truncate text-sm border border-white/5 font-medium leading-relaxed">
                 {pendingDelete?.name}
               </p>
-              <div className="flex gap-3">
+              <div className="flex gap-4">
                 <button
                   onClick={handleCancelDelete}
-                  className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl transition-colors"
+                  className="flex-1 px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl transition-all duration-200 border border-white/5"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleConfirmDelete}
-                  className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors"
+                  className="flex-1 px-5 py-3.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-red-500/25"
                 >
-                  Delete
+                  Delete File
                 </button>
               </div>
             </motion.div>
@@ -398,68 +540,90 @@ const Session: React.FC<SessionProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Keyboard Shortcuts Modal */}
+      {/* ── Keyboard Shortcuts Modal ── */}
       <AnimatePresence>
         {showShortcuts && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-6"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6"
             onClick={() => setShowShortcuts(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-slate-800 rounded-2xl p-6 max-w-md w-full"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="glass rounded-2xl p-6 max-w-md w-full border border-slate-700/30"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Keyboard className="w-5 h-5" />
+                  <Keyboard className="w-5 h-5 text-indigo-400" />
                   Keyboard Shortcuts
                 </h3>
                 <button
                   onClick={() => setShowShortcuts(false)}
-                  className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                  className="p-2 hover:bg-slate-700/50 rounded-lg transition-all duration-200"
                 >
                   <X className="w-5 h-5 text-slate-400" />
                 </button>
               </div>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Keep file</span>
-                  <div className="flex gap-1">
-                    <kbd className="px-2 py-1 bg-slate-700 rounded text-sm">→</kbd>
-                    <kbd className="px-2 py-1 bg-slate-700 rounded text-sm">D</kbd>
+
+              {/* File Actions */}
+              <div className="mb-4">
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2.5">File Actions</p>
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-700/30 transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded bg-green-500/20 flex items-center justify-center"><Check className="w-3.5 h-3.5 text-green-400" /></div>
+                      <span className="text-slate-300 text-sm">Keep file</span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <kbd className="kbd">→</kbd>
+                      <kbd className="kbd">D</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-700/30 transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded bg-red-500/20 flex items-center justify-center"><X className="w-3.5 h-3.5 text-red-400" /></div>
+                      <span className="text-slate-300 text-sm">Delete file</span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <kbd className="kbd">←</kbd>
+                      <kbd className="kbd">A</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-700/30 transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded bg-blue-500/20 flex items-center justify-center"><SkipForward className="w-3.5 h-3.5 text-blue-400" /></div>
+                      <span className="text-slate-300 text-sm">Skip file</span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <kbd className="kbd">↑</kbd>
+                      <kbd className="kbd">W</kbd>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Delete file</span>
-                  <div className="flex gap-1">
-                    <kbd className="px-2 py-1 bg-slate-700 rounded text-sm">←</kbd>
-                    <kbd className="px-2 py-1 bg-slate-700 rounded text-sm">A</kbd>
+              </div>
+
+              {/* Other */}
+              <div>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2.5">Other</p>
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-700/30 transition-colors">
+                    <span className="text-slate-300 text-sm">Open file in default app</span>
+                    <kbd className="kbd">Space</kbd>
                   </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Skip file</span>
-                  <div className="flex gap-1">
-                    <kbd className="px-2 py-1 bg-slate-700 rounded text-sm">↑</kbd>
-                    <kbd className="px-2 py-1 bg-slate-700 rounded text-sm">W</kbd>
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-700/30 transition-colors">
+                    <span className="text-slate-300 text-sm">Undo last action</span>
+                    <kbd className="kbd">Ctrl+Z</kbd>
                   </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Open file</span>
-                  <kbd className="px-2 py-1 bg-slate-700 rounded text-sm">Space</kbd>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Undo last action</span>
-                  <kbd className="px-2 py-1 bg-slate-700 rounded text-sm">Ctrl+Z</kbd>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Go back</span>
-                  <kbd className="px-2 py-1 bg-slate-700 rounded text-sm">Esc</kbd>
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-700/30 transition-colors">
+                    <span className="text-slate-300 text-sm">Go back to home</span>
+                    <kbd className="kbd">Esc</kbd>
+                  </div>
                 </div>
               </div>
             </motion.div>

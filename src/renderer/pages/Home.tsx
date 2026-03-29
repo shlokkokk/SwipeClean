@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   FolderOpen, 
   Settings, 
-  Sparkles, 
   Trash2, 
   Clock, 
-  ChevronRight,
   Folder,
   Zap
 } from 'lucide-react';
+import Tooltip from '../components/Tooltip';
+import swipecleanLogo from '../assets/swipeclean_logo.png';
 import type { RecentFolder } from '@shared/types';
 
 interface HomeProps {
@@ -65,158 +65,172 @@ const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings }) => {
 
   const getFolderIcon = (name: string) => {
     const lowerName = name.toLowerCase();
-    if (lowerName.includes('download')) return <Trash2 className="w-6 h-6 text-red-400" />;
-    if (lowerName.includes('doc')) return <Folder className="w-6 h-6 text-blue-400" />;
-    if (lowerName.includes('pic') || lowerName.includes('image')) return <Folder className="w-6 h-6 text-purple-400" />;
-    if (lowerName.includes('desk')) return <Folder className="w-6 h-6 text-green-400" />;
-    return <Folder className="w-6 h-6 text-indigo-400" />;
+    if (lowerName.includes('download')) return <Trash2 className="w-4 h-4 text-red-400" />;
+    if (lowerName.includes('doc')) return <Folder className="w-4 h-4 text-blue-400" />;
+    if (lowerName.includes('pic') || lowerName.includes('image') || lowerName.includes('screen')) return <Folder className="w-4 h-4 text-purple-400" />;
+    if (lowerName.includes('desk')) return <Folder className="w-4 h-4 text-green-400" />;
+    return <Folder className="w-4 h-4 text-indigo-400" />;
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays} days ago`;
     return date.toLocaleDateString();
   };
 
+  const truncatePath = (path: string, maxLength: number = 65) => {
+    if (path.length <= maxLength) return path;
+    const charsToShow = maxLength - 3;
+    const frontChars = Math.ceil(charsToShow * 0.35); // Show first 35% 
+    const backChars = Math.floor(charsToShow * 0.65); // Show last 65% (preserves deep folder names)
+    return path.substring(0, frontChars) + '...' + path.substring(path.length - backChars);
+  };
+
   return (
-    <div className="h-full flex flex-col items-center justify-center p-8 relative overflow-hidden">
-      {/* Background Decorations */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-500/5 rounded-full blur-3xl" />
-      </div>
-
-      {/* Main Content */}
-      <div className="relative z-10 flex flex-col items-center max-w-2xl w-full">
-        {/* Logo */}
-        <motion.div
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ duration: 0.6, type: 'spring', stiffness: 200 }}
-          className="mb-6"
-        >
-          <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-2xl animate-glow">
-            <Sparkles className="w-12 h-12 text-white" />
-          </div>
-        </motion.div>
-
-        {/* Title */}
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-5xl font-bold text-center mb-2 bg-gradient-to-r from-white via-indigo-200 to-purple-200 bg-clip-text text-transparent"
-        >
-          SwipeClean
-        </motion.h1>
-
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="text-slate-400 text-lg text-center mb-10"
-        >
-          Clean folders, have fun. Swipe through files like never before.
-        </motion.p>
-
-        {/* Select Folder Button */}
-        <motion.button
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleSelectFolder}
-          disabled={isLoading}
-          className="group relative w-full max-w-md"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
-          <div className="relative flex items-center justify-center gap-3 px-8 py-5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl font-semibold text-lg shadow-xl">
-            {isLoading ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-              >
-                <Zap className="w-6 h-6" />
-              </motion.div>
-            ) : (
-              <FolderOpen className="w-6 h-6" />
-            )}
-            {isLoading ? 'Opening...' : 'Select Folder to Clean'}
-          </div>
-        </motion.button>
-
-        {/* Recent Folders */}
-        {recentFolders.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="w-full max-w-md mt-10"
+    <div className="h-full w-full flex flex-col items-center justify-center relative overflow-hidden">
+      
+      {/* ── Settings Controls - Top Right ── */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.2 }}
+        className="absolute top-8 right-8 z-30"
+      >
+        <Tooltip text="Application Settings" position="left">
+          <button
+            onClick={onOpenSettings}
+            className="flex items-center justify-center p-3 bg-white/5 hover:bg-white/15 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/25 text-slate-400 hover:text-white transition-all duration-300 shadow-xl group ring-1 ring-inset ring-white/5"
           >
-            <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              Recent Folders
-            </h3>
-            <div className="space-y-2">
-              {recentFolders.slice(0, 5).map((folder, index) => (
-                <motion.button
-                  key={folder.path}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + index * 0.1 }}
-                  whileHover={{ scale: 1.02, x: 4 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleRecentFolderClick(folder.path)}
-                  className="w-full flex items-center gap-4 p-4 bg-slate-800/50 hover:bg-slate-800 rounded-xl border border-slate-700/50 hover:border-indigo-500/50 transition-all group"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center group-hover:bg-indigo-500/20 transition-colors">
-                    {getFolderIcon(folder.name)}
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="font-medium text-white group-hover:text-indigo-300 transition-colors">
-                      {folder.name}
-                    </p>
-                    <p className="text-sm text-slate-400">
-                      {folder.fileCount} files • {formatDate(folder.lastAccessed)}
-                    </p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
-                </motion.button>
-              ))}
-            </div>
+            <Settings className="w-5 h-5 group-hover:rotate-45 transition-transform duration-500" />
+          </button>
+        </Tooltip>
+      </motion.div>
+
+      {/* ── Version - Bottom Right ── */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="absolute bottom-8 right-8 z-30 pointer-events-none"
+      >
+        <div className="text-[11px] font-bold text-slate-600 tracking-[0.2em] uppercase">
+          Build {appVersion}
+        </div>
+      </motion.div>
+
+      {/* ── Cinematic Hero Layout ── */}
+      <div className="flex-1 w-full flex flex-col items-center justify-center p-8 z-10 relative">
+        
+        {/* Main Hero Container */}
+        <div className="flex flex-col items-center w-full max-w-4xl">
+          
+          {/* Logo Drop */}
+          <motion.div
+            initial={{ scale: 0.85, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, type: 'spring', stiffness: 100, damping: 20 }}
+            className="mb-8 relative group"
+          >
+            <div className="absolute inset-0 bg-indigo-500/20 rounded-full blur-[50px] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <img 
+              src={swipecleanLogo} 
+              alt="SwipeClean" 
+              className="w-32 h-32 lg:w-40 lg:h-40 object-contain drop-shadow-2xl grayscale-[5%] group-hover:grayscale-0 transition-all duration-500"
+              draggable={false}
+            />
           </motion.div>
-        )}
 
-        {/* Settings Button */}
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={onOpenSettings}
-          className="mt-8 flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-white transition-colors"
-        >
-          <Settings className="w-5 h-5" />
-          <span className="text-sm font-medium">Settings</span>
-        </motion.button>
+          {/* Core Action CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.5, ease: 'easeOut' }}
+            className="w-full flex flex-col items-center"
+          >
+            <button
+              onClick={handleSelectFolder}
+              disabled={isLoading}
+              className="group relative w-full sm:w-auto min-w-[300px]"
+            >
+              <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/30 via-purple-500/30 to-indigo-500/30 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition duration-500 animate-gradient-xy" />
+              <div className="relative flex items-center justify-center gap-3 px-8 py-4 bg-white/5 hover:bg-white/10 backdrop-blur-xl rounded-full border border-white/10 ring-1 ring-inset ring-white/5 shadow-2xl transition-all duration-300 overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
+                
+                {isLoading ? (
+                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}>
+                    <Zap className="w-5 h-5 text-indigo-300" />
+                  </motion.div>
+                ) : (
+                  <FolderOpen className="w-5 h-5 text-indigo-300 transition-transform duration-300 group-hover:scale-110" />
+                )}
+                <span className="text-[15px] font-bold text-white tracking-wide">{isLoading ? 'Initializing...' : 'Select Folder to Clean'}</span>
+              </div>
+            </button>
+            
+            <p className="text-[13px] text-slate-400 mt-5 font-medium tracking-wide">
+              Swipe through files. Keep what matters, delete what doesn't.
+            </p>
+          </motion.div>
 
-        {/* Version */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="absolute bottom-4 text-xs text-slate-600"
-        >
-          v{appVersion}
-        </motion.p>
+          {/* Elegant Recents List */}
+          {recentFolders.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="w-full mt-16"
+            >
+              <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.25em] mb-5 flex items-center justify-center gap-2">
+                <Clock className="w-3.5 h-3.5" />
+                Recent Workspaces
+              </h3>
+              
+              <div className="flex flex-col gap-3 w-full">
+                {recentFolders.slice(0, 4).map((folder) => (
+                  <button
+                    key={folder.path}
+                    onClick={() => handleRecentFolderClick(folder.path)}
+                    className="w-full flex items-center justify-between pl-8 pr-14 sm:pr-16 py-6 bg-slate-900/40 hover:bg-slate-800/60 backdrop-blur-xl rounded-[2rem] border border-white/5 hover:border-white/15 transition-all duration-300 group shadow-lg hover:shadow-indigo-500/10 hover:-translate-y-0.5 ring-1 ring-inset ring-white/2"
+                  >
+                    <div className="flex items-center gap-6 min-w-0 pr-6">
+                      {/* Icon Container */}
+                      <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 border border-white/5 shadow-inner transition-all duration-300 group-hover:bg-indigo-500/20 group-hover:border-indigo-500/30 group-hover:scale-105">
+                        <div className="scale-125">{getFolderIcon(folder.name)}</div>
+                      </div>
+                      
+                      {/* Flex Left Aligned Titles */}
+                      <div className="flex flex-col text-left min-w-0 overflow-hidden">
+                        <p className="font-bold text-[15px] text-slate-200 group-hover:text-white transition-colors duration-300 truncate">
+                          {folder.name}
+                        </p>
+                        <Tooltip text={folder.path} position="bottom" delay={300}>
+                          <p className="text-[13px] text-slate-500 group-hover:text-indigo-300/60 transition-colors mt-[2px] truncate w-full">
+                            {truncatePath(folder.path, 80)}
+                          </p>
+                        </Tooltip>
+                      </div>
+                    </div>
+
+                    {/* Meta Data center aligned block */}
+                    <div className="flex flex-col items-center justify-center shrink-0 w-32 gap-2 opacity-70 group-hover:opacity-100 transition-opacity duration-300 ml-4 sm:ml-6 pl-4 border-l border-white/5 h-full">
+                      <span className="text-[12px] font-bold text-slate-300 uppercase tracking-widest bg-black/40 px-4 py-1.5 rounded-xl border border-white/5 whitespace-nowrap">
+                        {folder.fileCount} File{folder.fileCount !== 1 ? 's' : ''}
+                      </span>
+                      <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">
+                        {formatDate(folder.lastAccessed)}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+        </div>
       </div>
     </div>
   );
