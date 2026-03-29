@@ -93,14 +93,14 @@ const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings, onOpenAbout
   };
 
   return (
-    <div className="h-full w-full flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="h-full w-full overflow-y-auto overflow-x-hidden relative custom-scrollbar">
       
       {/* ── Top Controls - Top Right ── */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2 }}
-        className="absolute top-8 right-8 z-40 flex items-center gap-3 pointer-events-auto"
+        className="fixed top-6 right-6 lg:top-8 lg:right-8 z-40 flex items-center gap-3 pointer-events-auto"
       >
         <Tooltip text="About SwipeClean" position="bottom">
           <button
@@ -130,18 +130,18 @@ const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings, onOpenAbout
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="absolute bottom-8 right-8 z-30 pointer-events-none"
+        className="fixed bottom-6 right-6 lg:bottom-8 lg:right-8 z-30 pointer-events-none"
       >
-        <div className="text-[11px] font-bold text-slate-600 tracking-[0.2em] uppercase">
+        <div className="text-[10px] lg:text-[11px] font-bold text-slate-600 tracking-[0.2em] uppercase">
           Build {appVersion}
         </div>
       </motion.div>
 
       {/* ── Cinematic Hero Layout ── */}
-      <div className="flex-1 w-full flex flex-col items-center justify-center p-8 z-10 relative">
+      <div className="min-h-full w-full flex flex-col items-center justify-center p-4 sm:p-8 z-10 relative">
         
         {/* Main Hero Container */}
-        <div className="flex flex-col items-center w-full max-w-4xl">
+        <div className="flex flex-col items-center w-full max-w-4xl my-auto py-12 lg:py-0">
           
           {/* Logo Drop */}
           <motion.div
@@ -215,21 +215,21 @@ const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings, onOpenAbout
                   <button
                     key={folder.path}
                     onClick={() => handleRecentFolderClick(folder.path)}
-                    className="w-full flex items-center justify-between pl-8 pr-14 sm:pr-16 py-6 bg-slate-900/40 hover:bg-slate-800/60 backdrop-blur-xl rounded-[2rem] border border-white/5 hover:border-white/15 transition-all duration-300 group shadow-lg hover:shadow-indigo-500/10 hover:-translate-y-0.5 ring-1 ring-inset ring-white/2"
+                    className="w-full flex sm:flex-row flex-col items-center justify-between px-6 sm:pl-8 sm:pr-14 py-4 sm:py-6 bg-slate-900/40 hover:bg-slate-800/60 backdrop-blur-xl rounded-3xl sm:rounded-[2rem] border border-white/5 hover:border-white/15 transition-all duration-300 group shadow-lg hover:shadow-indigo-500/10 hover:-translate-y-0.5 ring-1 ring-inset ring-white/2 gap-4 sm:gap-0"
                   >
-                    <div className="flex items-center gap-6 min-w-0 pr-6">
+                    <div className="flex items-center gap-4 sm:gap-6 w-full sm:min-w-0 pr-0 sm:pr-6">
                       {/* Icon Container */}
-                      <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 border border-white/5 shadow-inner transition-all duration-300 group-hover:bg-indigo-500/20 group-hover:border-indigo-500/30 group-hover:scale-105">
-                        <div className="scale-125">{getFolderIcon(folder.name)}</div>
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white/5 flex items-center justify-center shrink-0 border border-white/5 shadow-inner transition-all duration-300 group-hover:bg-indigo-500/20 group-hover:border-indigo-500/30 group-hover:scale-105">
+                        <div className="scale-110 sm:scale-125">{getFolderIcon(folder.name)}</div>
                       </div>
                       
                       {/* Flex Left Aligned Titles */}
-                      <div className="flex flex-col text-left min-w-0 overflow-hidden">
-                        <p className="font-bold text-[15px] text-slate-200 group-hover:text-white transition-colors duration-300 truncate">
+                      <div className="flex flex-col text-left min-w-0 flex-1 overflow-hidden">
+                        <p className="font-bold text-[14px] sm:text-[15px] text-slate-200 group-hover:text-white transition-colors duration-300 truncate">
                           {folder.name}
                         </p>
                         <Tooltip text={folder.path} position="bottom" delay={300}>
-                          <p className="text-[13px] text-slate-500 group-hover:text-indigo-300/60 transition-colors mt-[2px] truncate w-full">
+                          <p className="text-[12px] sm:text-[13px] text-slate-500 group-hover:text-indigo-300/60 transition-colors mt-[2px] truncate w-full">
                             {truncatePath(folder.path, 80)}
                           </p>
                         </Tooltip>
@@ -237,11 +237,11 @@ const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings, onOpenAbout
                     </div>
 
                     {/* Meta Data center aligned block */}
-                    <div className="flex flex-col items-center justify-center shrink-0 w-32 gap-2 opacity-70 group-hover:opacity-100 transition-opacity duration-300 ml-4 sm:ml-6 pl-4 border-l border-white/5 h-full">
-                      <span className="text-[12px] font-bold text-slate-300 uppercase tracking-widest bg-black/40 px-4 py-1.5 rounded-xl border border-white/5 whitespace-nowrap">
+                    <div className="flex sm:flex-col flex-row items-center justify-between sm:justify-center w-full sm:w-32 shrink-0 sm:opacity-70 group-hover:opacity-100 transition-opacity duration-300 sm:ml-4 sm:pl-4 sm:border-l border-white/5 h-full sm:mt-0 mt-2 border-t sm:border-t-0 pt-3 sm:pt-0">
+                      <span className="text-[11px] sm:text-[12px] font-bold text-slate-300 uppercase tracking-widest bg-black/40 px-4 py-1.5 rounded-xl border border-white/5 whitespace-nowrap">
                         {folder.fileCount} File{folder.fileCount !== 1 ? 's' : ''}
                       </span>
-                      <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">
+                      <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 whitespace-nowrap hidden sm:block">
                         {formatDate(folder.lastAccessed)}
                       </span>
                     </div>
