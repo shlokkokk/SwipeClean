@@ -22,7 +22,7 @@ interface HomeProps {
 const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings, onOpenAbout }) => {
   const [recentFolders, setRecentFolders] = useState<RecentFolder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [appVersion, setAppVersion] = useState('1.0.1');
+  const [appVersion, setAppVersion] = useState('Loading...');
 
   useEffect(() => {
     loadRecentFolders();
