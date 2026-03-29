@@ -22,7 +22,7 @@ interface HomeProps {
 const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings, onOpenAbout }) => {
   const [recentFolders, setRecentFolders] = useState<RecentFolder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [appVersion, setAppVersion] = useState('1.0.0');
+  const [appVersion, setAppVersion] = useState('1.0.1');
 
   useEffect(() => {
     loadRecentFolders();
@@ -157,6 +157,12 @@ const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings, onOpenAbout
               className="w-32 h-32 lg:w-40 lg:h-40 object-contain drop-shadow-2xl grayscale-[5%] group-hover:grayscale-0 transition-all duration-500"
               draggable={false}
             />
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full backdrop-blur-md">
+              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest whitespace-nowrap leading-none flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Stable Production
+              </span>
+            </div>
           </motion.div>
 
           {/* Core Action CTA */}
