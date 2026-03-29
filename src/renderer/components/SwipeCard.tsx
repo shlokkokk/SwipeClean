@@ -24,6 +24,7 @@ interface SwipeCardProps {
   onSwipe: (direction: SwipeDirection) => void;
   onUndo: () => void;
   canUndo: boolean;
+  undoTooltipText?: string;
   onOpenFile: () => void;
 }
 
@@ -78,6 +79,7 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
   onSwipe, 
   onUndo, 
   canUndo, 
+  undoTooltipText,
   onOpenFile 
 }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -269,7 +271,7 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
       {/* ── Action Buttons with Labels ── */}
       <div className="flex items-end justify-center gap-7 mt-10">
         {/* Undo */}
-        <Tooltip text="Undo last action" shortcut="Ctrl+Z" position="bottom">
+        <Tooltip text={undoTooltipText || "Undo last action"} shortcut="Ctrl+Z" position="bottom">
           <motion.button
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.92 }}

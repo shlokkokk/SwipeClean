@@ -10,7 +10,8 @@ import {
   Folder,
   Keyboard,
   Info,
-  Zap
+  Zap,
+  RotateCcw
 } from 'lucide-react';
 import SwipeCard from '../components/SwipeCard';
 import Tooltip from '../components/Tooltip';
@@ -49,6 +50,7 @@ const Session: React.FC<SessionProps> = ({
   const [showGuide, setShowGuide] = useState(true);
   const [exitDirections, setExitDirections] = useState<Record<string, SwipeDirection>>({});
   const [isSwipeTransitioning, setIsSwipeTransitioning] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const currentFile = fileList[currentIndex];
   const progress = files.length > 0 ? ((currentIndex) / files.length) * 100 : 0;
@@ -65,7 +67,7 @@ const Session: React.FC<SessionProps> = ({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!currentFile) return;
+      if (!currentFile && !((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey))) return;
       if (showConfirmDialog) return;
       if (isSwipeTransitioning) return;
 
@@ -155,10 +157,21 @@ const Session: React.FC<SessionProps> = ({
     updatedFiles[currentIndex] = { ...currentFile, status: action.newStatus };
     setFileList(updatedFiles);
 
-    // Add to undo stack
+    // Add to undo stack and handle dropout
     setUndoStack(prev => {
       const newStack = [action, ...prev];
-      return newStack.slice(0, settings.maxUndoActions);
+      if (newStack.length > settings.maxUndoActions) {
+        const dropped = newStack.pop();
+        if (dropped && dropped.newStatus === 'deleted') {
+          const droppedFile = updatedFiles.find(f => f.id === dropped.fileId);
+          if (droppedFile) {
+            void window.electronAPI.moveToTrash(droppedFile.path).catch(error => {
+              console.error('Error moving to trash:', error);
+            });
+          }
+        }
+      }
+      return newStack;
     });
 
     // Update stats immediately for responsive footer updates.
@@ -167,30 +180,14 @@ const Session: React.FC<SessionProps> = ({
     } else if (direction === 'left') {
       setDeletedCount(prev => prev + 1);
       setSpaceFreed(prev => prev + currentFile.size);
-
-      // Do not block animation on filesystem operations.
-      void window.electronAPI.moveToTrash(currentFile.path).catch((error) => {
-        console.error('Error moving to trash:', error);
-      });
     } else if (direction === 'up') {
       setSkippedCount(prev => prev + 1);
     }
 
     // Give AnimatePresence time to play directional exit for all key/button actions.
     window.setTimeout(() => {
-      if (currentIndex < files.length - 1) {
-        setCurrentIndex(prev => prev + 1);
-        setIsSwipeTransitioning(false);
-      } else {
-        // Session complete
-        onComplete({
-          keptCount: direction === 'right' ? keptCount + 1 : keptCount,
-          deletedCount: direction === 'left' ? deletedCount + 1 : deletedCount,
-          skippedCount: direction === 'up' ? skippedCount + 1 : skippedCount,
-          spaceFreed: direction === 'left' ? spaceFreed + currentFile.size : spaceFreed
-        });
-        setIsSwipeTransitioning(false);
-      }
+      setCurrentIndex(prev => prev + 1);
+      setIsSwipeTransitioning(false);
     }, 240);
   };
 
@@ -215,6 +212,7 @@ const Session: React.FC<SessionProps> = ({
       setKeptCount(prev => prev - 1);
     } else if (lastAction.newStatus === 'deleted') {
       setDeletedCount(prev => prev - 1);
+      setSpaceFreed(prev => prev - fileList[fileIndex].size);
     } else if (lastAction.newStatus === 'skipped') {
       setSkippedCount(prev => prev - 1);
     }
@@ -248,6 +246,28 @@ const Session: React.FC<SessionProps> = ({
     setPendingDelete(null);
   };
 
+  const getUndoTooltip = () => {
+    if (undoStack.length > 0) return "Undo last action";
+    if (currentIndex > 0) return `Undo limit reached (Max ${settings.maxUndoActions} actions)`;
+    return "No actions to undo";
+  };
+
+  const handleSessionComplete = async () => {
+    setIsProcessing(true);
+    // Process remaining pendings in undo stack (older ones are already trashed dynamically)
+    const pendingDeletesInStack = undoStack
+      .filter(a => a.newStatus === 'deleted')
+      .map(a => fileList.find(f => f.id === a.fileId))
+      .filter((f): f is FileItem => f !== undefined);
+
+    for (const file of pendingDeletesInStack) {
+      await window.electronAPI.moveToTrash(file.path).catch(error => {
+        console.error('Error moving to trash:', error);
+      });
+    }
+    onComplete({ keptCount, deletedCount, skippedCount, spaceFreed });
+  };
+
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -274,12 +294,40 @@ const Session: React.FC<SessionProps> = ({
           <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Session Complete</h2>
           <p className="text-slate-400 mb-8 max-w-sm mx-auto">Great work. You've reviewed every file in this folder.</p>
           <button
-            onClick={() => onComplete({ keptCount, deletedCount, skippedCount, spaceFreed })}
-            className="px-8 py-4 bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold rounded-2xl transition-all duration-300 shadow-xl shadow-indigo-500/25 hover:shadow-2xl hover:shadow-indigo-500/40 flex items-center gap-3 mx-auto"
+            onClick={handleSessionComplete}
+            disabled={isProcessing}
+            className={`px-8 py-4 bg-linear-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-2xl transition-all duration-300 shadow-xl shadow-indigo-500/25 flex items-center gap-3 mx-auto ${isProcessing ? 'opacity-70 cursor-not-allowed' : 'hover:from-indigo-400 hover:to-purple-500 hover:shadow-2xl hover:shadow-indigo-500/40'}`}
           >
-            <Zap className="w-5 h-5" />
-            View Summary
+            {isProcessing ? (
+              <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              <Zap className="w-5 h-5" />
+            )}
+            {isProcessing ? 'Processing cleanup...' : 'View Summary'}
           </button>
+          <div className="mt-6 flex justify-center">
+            <Tooltip 
+              text={getUndoTooltip()} 
+              position="bottom" 
+              shortcut="Ctrl+Z"
+            >
+              <button
+                onClick={handleUndo}
+                disabled={undoStack.length === 0 || isProcessing}
+                className={`text-sm font-medium flex items-center justify-center gap-2 outline-none transition-colors ${
+                  undoStack.length === 0 || isProcessing
+                    ? 'text-slate-600 cursor-not-allowed opacity-50'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <RotateCcw className="w-4 h-4" />
+                Undo Last Action
+              </button>
+            </Tooltip>
+          </div>
         </motion.div>
       </div>
     );
@@ -370,25 +418,34 @@ const Session: React.FC<SessionProps> = ({
             const isTop = i === arr.length - 1;
             const stackDepth = arr.length - 1 - i;
             const direction = exitDirections[file.id] || null;
-            const cornerSign = stackDepth === 0 ? 0 : (stackDepth % 2 === 0 ? 1 : -1);
-            const xOffset = stackDepth === 0 ? 0 : cornerSign * (42 + (stackDepth - 1) * 18);
-            const yOffset = stackDepth === 0 ? 0 : stackDepth * 24;
-            const stackOpacity = 1 - stackDepth * 0.22;
+            
+            // Scattered desk aesthetic: Fanning out perfectly from exactly behind the main box
+            const cornerSign = stackDepth % 2 === 0 ? 1 : -1;
+            const xOffset = stackDepth === 0 ? 0 : cornerSign * stackDepth * 24;
+            const rotateAngle = stackDepth === 0 ? 0 : cornerSign * stackDepth * 4;
+            
+            // Because dummy and real cards now have identical total heights, 
+            // relying purely on scale shrinking to exactly center it behind the main card seamlessly!
+            const yOffset = 0;
+            
+            const scale = 1 - Math.max(0, stackDepth * 0.05);
+            const stackOpacity = Math.max(0, 1 - stackDepth * 0.25);
+            const zIndex = 10 - stackDepth;
 
             return (
               <motion.div
                 key={file.id}
                 custom={direction}
-                initial={{ opacity: 0, scale: 0.88, x: stackDepth === 0 ? 0 : cornerSign * 120, y: -80 }}
+                initial={{ opacity: 0, scale: 0.8, y: stackDepth * -10, x: xOffset * 1.5 }}
                 animate={{ 
                   opacity: stackOpacity,
-                  scale: 1 - stackDepth * 0.045,
+                  scale: scale,
                   x: xOffset,
                   y: yOffset,
-                  rotate: 0,
-                  zIndex: 10 - stackDepth
+                  rotate: rotateAngle,
+                  zIndex: zIndex
                 }}
-                transition={{ type: 'spring', stiffness: 280, damping: 30 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 35 }}
                 exit={{
                   opacity: 0,
                   x: direction === 'right' ? 400 : direction === 'left' ? -400 : 0,
@@ -396,8 +453,8 @@ const Session: React.FC<SessionProps> = ({
                   rotate: direction === 'right' ? 15 : direction === 'left' ? -15 : 0,
                   transition: { duration: 0.28, ease: 'easeOut' }
                 }}
-                className="absolute w-full max-w-lg z-10"
-                style={{ pointerEvents: isTop ? 'auto' : 'none' }}
+                className="absolute w-full max-w-xl z-10"
+                style={{ pointerEvents: isTop ? 'auto' : 'none', transformOrigin: 'center center' }}
               >
                 {isTop ? (
                   <SwipeCard
@@ -405,13 +462,33 @@ const Session: React.FC<SessionProps> = ({
                     onSwipe={handleSwipe}
                     onUndo={handleUndo}
                     canUndo={undoStack.length > 0}
+                    undoTooltipText={getUndoTooltip()}
                     onOpenFile={handleOpenFile}
                   />
                 ) : (
                   <div className="relative w-full mx-auto">
-                    <div className="h-112 rounded-3xl border border-white/12 bg-slate-950/35 overflow-hidden">
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.1),transparent_48%),radial-gradient(circle_at_70%_75%,rgba(99,102,241,0.08),transparent_44%)]" />
-                      <div className="absolute inset-0 opacity-25 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=')]" />
+                    <div className="rounded-3xl border border-white/5 bg-slate-900/40 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col">
+                      {/* Top section: Preview skeleton */}
+                      <div className="h-112 w-full bg-slate-950/40 border-b border-white/5 relative flex items-center justify-center">
+                        <div className="w-20 h-20 rounded-3xl bg-slate-800/40 border border-white/10 shadow-inner" />
+                        <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=')] mask-[linear-gradient(to_bottom,white,transparent)] pointer-events-none" />
+                      </div>
+                      {/* Bottom section: Metadata skeleton matching SwipeCard dimensions */}
+                      <div className="p-6 flex flex-col justify-start">
+                        <div className="w-20 h-5 bg-slate-800/40 rounded-lg mb-3" />
+                        <div className="w-3/4 h-7 bg-slate-800/50 rounded-lg mb-1.5" />
+                        <div className="w-full h-3 bg-slate-800/30 rounded-md mb-2" />
+                        <div className="w-1/2 h-3 bg-slate-800/20 rounded-md mb-2.5" />
+                        <div className="w-1/3 h-4 bg-slate-800/40 rounded-lg mt-1" />
+                      </div>
+                    </div>
+                    {/* Invisible geometric clone of Action Buttons to guarantee 100% pixel-perfect identical flex container alignment */}
+                    <div className="flex items-end justify-center gap-7 mt-10 invisible pointer-events-none">
+                      <div className="flex flex-col items-center gap-1.5"><div className="w-14 h-14" /><span className="text-[11px] font-bold uppercase tracking-widest">Undo</span></div>
+                      <div className="flex flex-col items-center gap-2"><div className="w-16 h-16" /><span className="text-[11px] font-bold uppercase tracking-widest">Delete</span></div>
+                      <div className="flex flex-col items-center gap-2"><div className="w-14 h-14" /><span className="text-[11px] font-bold uppercase tracking-widest">Skip</span></div>
+                      <div className="flex flex-col items-center gap-2"><div className="w-16 h-16" /><span className="text-[11px] font-bold uppercase tracking-widest">Keep</span></div>
+                      <div className="flex flex-col items-center gap-2"><div className="w-14 h-14" /><span className="text-[11px] font-bold uppercase tracking-widest">Open</span></div>
                     </div>
                   </div>
                 )}
