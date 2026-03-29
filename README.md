@@ -2,7 +2,7 @@
 
 > **Turn boring file cleanup into an addictive Tinder-style game**
 
-Clean up your Downloads folder while having fun! SwipeClean gamifies file management with a sleek desktop app that makes deleting files feel satisfying.
+Clean up any folder while having fun! SwipeClean gamifies file management with a sleek desktop app that makes deleting files feel satisfying.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-v20+-green)]()
@@ -13,7 +13,7 @@ Clean up your Downloads folder while having fun! SwipeClean gamifies file manage
 
 ## 🎮 What Is SwipeClean?
 
-SwipeClean is a **desktop application** that transforms file cleanup from a chore into an enjoyable experience. Simply select a folder, and SwipeClean presents your files one-by-one as swipeable cards—just like Tinder, but for your cluttered Downloads folder.
+SwipeClean is a **desktop application** that transforms file cleanup from a chore into an enjoyable experience. Simply select a folder, and SwipeClean presents your files one-by-one as swipeable cards—just like Tinder, but for your cluttered folders.
 
 **The action is simple:**
 - 👉 **Swipe Right** → Keep the file
@@ -173,7 +173,7 @@ npm run dev
 ### 1️⃣ Launch & Select Folder
 - Open SwipeClean
 - Click "Select Folder to Clean"
-- Choose your Downloads or any messy folder
+- Choose any folder you want to organize
 - SwipeClean scans the folder and counts files
 
 ### 2️⃣ Choose Sorting Order
