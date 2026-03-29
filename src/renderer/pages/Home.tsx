@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   FolderOpen, 
   Settings, 
+  Info,
   Trash2, 
   Clock, 
   Folder,
@@ -15,9 +16,10 @@ import type { RecentFolder } from '@shared/types';
 interface HomeProps {
   onFolderSelect: (folderPath: string) => void;
   onOpenSettings: () => void;
+  onOpenAbout: () => void;
 }
 
-const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings }) => {
+const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings, onOpenAbout }) => {
   const [recentFolders, setRecentFolders] = useState<RecentFolder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [appVersion, setAppVersion] = useState('1.0.0');
@@ -93,15 +95,28 @@ const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings }) => {
   return (
     <div className="h-full w-full flex flex-col items-center justify-center relative overflow-hidden">
       
-      {/* ── Settings Controls - Top Right ── */}
+      {/* ── Top Controls - Top Right ── */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2 }}
-        className="absolute top-8 right-8 z-30"
+        className="absolute top-8 right-8 z-40 flex items-center gap-3 pointer-events-auto"
       >
-        <Tooltip text="Application Settings" position="left">
+        <Tooltip text="About SwipeClean" position="bottom">
           <button
+            type="button"
+            aria-label="Open About SwipeClean"
+            onClick={() => onOpenAbout()}
+            className="flex items-center justify-center p-3 bg-white/5 hover:bg-white/15 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/25 text-slate-400 hover:text-white transition-all duration-300 shadow-xl group ring-1 ring-inset ring-white/5"
+          >
+            <Info className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+          </button>
+        </Tooltip>
+
+        <Tooltip text="Application Settings" position="bottom-left-slant">
+          <button
+            type="button"
+            aria-label="Open Application Settings"
             onClick={onOpenSettings}
             className="flex items-center justify-center p-3 bg-white/5 hover:bg-white/15 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/25 text-slate-400 hover:text-white transition-all duration-300 shadow-xl group ring-1 ring-inset ring-white/5"
           >

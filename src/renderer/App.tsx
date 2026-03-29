@@ -4,10 +4,11 @@ import Home from './pages/Home';
 import Session from './pages/Session';
 import Summary from './pages/Summary';
 import Settings from './pages/Settings';
+import About from './pages/About';
 import SortingModal from './components/SortingModal';
 import type { FileItem, SortOrder, Session as SessionType, AppSettings } from '@shared/types';
 
-type View = 'home' | 'sorting' | 'session' | 'summary' | 'settings';
+type View = 'home' | 'sorting' | 'session' | 'summary' | 'settings' | 'about';
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('home');
@@ -131,6 +132,10 @@ function App() {
     setCurrentView('settings');
   };
 
+  const handleOpenAbout = () => {
+    setCurrentView('about');
+  };
+
   const handleSettingsSave = async (newSettings: AppSettings) => {
     try {
       await window.electronAPI.saveSettings(newSettings);
@@ -176,6 +181,7 @@ function App() {
               <Home 
                 onFolderSelect={handleFolderSelect}
                 onOpenSettings={handleOpenSettings}
+                onOpenAbout={handleOpenAbout}
               />
             </motion.div>
           )}
@@ -251,6 +257,20 @@ function App() {
                 onSave={handleSettingsSave}
                 onCancel={handleBackToHome}
               />
+            </motion.div>
+          )}
+
+          {currentView === 'about' && (
+            <motion.div
+              key="about"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.3 }}
+              className="h-full w-full"
+            >
+              <About onBack={handleBackToHome} onOpenSettings={handleOpenSettings} />
             </motion.div>
           )}
         </AnimatePresence>

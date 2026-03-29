@@ -38,6 +38,7 @@ export default function Settings({ settings, onSave, onCancel }: SettingsProps) 
   };
 
   const handleSave = () => {
+    if (!hasChanges) return;
     onSave(localSettings);
   };
 
@@ -89,7 +90,11 @@ export default function Settings({ settings, onSave, onCancel }: SettingsProps) 
           <button onClick={() => setShowResetConfirm(true)} className="text-[13px] font-bold tracking-[0.2em] text-white/40 hover:text-white transition-colors uppercase">
             Restore Defaults
           </button>
-          <button onClick={handleSave} className={`px-12 py-5 text-[14px] font-bold tracking-[0.2em] uppercase transition-all duration-300 border-2 ${hasChanges ? 'bg-white text-black border-white hover:bg-black hover:text-white' : 'bg-transparent text-white/30 border-white/10 hover:border-white/30 cursor-not-allowed'}`}>
+          <button
+            onClick={handleSave}
+            disabled={!hasChanges}
+            className={`px-12 py-5 text-[14px] font-bold tracking-[0.2em] uppercase transition-all duration-300 border-2 ${hasChanges ? 'bg-white text-black border-white hover:bg-black hover:text-white' : 'bg-transparent text-white/30 border-white/10 hover:border-white/30 cursor-not-allowed'}`}
+          >
             <span className="relative flex items-center gap-4">
               <Save className="w-5 h-5" /> {hasChanges ? 'Save Changes' : 'Unchanged'}
             </span>

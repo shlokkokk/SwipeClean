@@ -3,7 +3,7 @@ import React, { useState, useRef, useCallback } from 'react';
 interface TooltipProps {
   text: string;
   shortcut?: string;
-  position?: 'top' | 'bottom' | 'left' | 'right';
+  position?: 'top' | 'bottom' | 'left' | 'right' | 'bottom-left-slant';
   children: React.ReactNode;
   delay?: number;
   fullWidth?: boolean;
