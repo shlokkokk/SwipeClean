@@ -4,7 +4,6 @@
 
 Clean up any folder while having fun! SwipeClean gamifies file management with a sleek desktop app that makes deleting files feel satisfying.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-v20+-green)]()
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)]()
 [![GitHub](https://img.shields.io/badge/GitHub-shlokkokk-black?logo=github)](https://github.com/shlokkokk/SwipeClean)
@@ -321,14 +320,6 @@ Contributions welcome! Here's how:
 - [ ] iOS/Android companion app
 - [ ] Team/family shared cleaning sessions
 - [ ] Real-time download folder auto-cleanup
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** — feel free to use, modify, and distribute.
-
-See [LICENSE](./LICENSE) for details.
 
 ---
 
