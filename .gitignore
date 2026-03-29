@@ -54,3 +54,6 @@ _private-docs/
 
 # Electron
 electron-builder.env
+
+# Personal guide
+RELEASE_CHEAT_SHEET.md
