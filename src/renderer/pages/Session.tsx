@@ -262,9 +262,7 @@ const Session: React.FC<SessionProps> = ({
     return "No actions to undo";
   };
 
-  const handleSessionComplete = async () => {
-    setIsProcessing(true);
-    // Process remaining pendings in undo stack
+  const commitPendingDeletes = async () => {
     const pendingDeletesInStack = undoStack
       .filter(a => a.newStatus === 'deleted')
       .map(a => fileList.find(f => f.id === a.fileId))
@@ -275,7 +273,19 @@ const Session: React.FC<SessionProps> = ({
         console.error('Error moving to trash:', error);
       });
     }
+  };
+
+  const handleSessionComplete = async () => {
+    setIsProcessing(true);
+    await commitPendingDeletes();
     onComplete({ keptCount, deletedCount, skippedCount, spaceFreed });
+  };
+
+  const handleAbandonSession = async () => {
+    setIsProcessing(true);
+    await commitPendingDeletes();
+    setShowExitConfirm(false);
+    onBack();
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -670,14 +680,12 @@ const Session: React.FC<SessionProps> = ({
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    setShowExitConfirm(false);
-                    onBack();
-                  }}
+                  onClick={handleAbandonSession}
+                  disabled={isProcessing}
                   className="flex-1 px-5 py-3.5 bg-orange-500/20 border border-orange-500/50 text-orange-400 font-black uppercase text-[11px] tracking-widest rounded-xl transition-all duration-200 shadow-[0_0_15px_rgba(249,115,22,0.2)] hover:bg-orange-500 hover:text-white"
                 >
                   <span className="flex items-center justify-center gap-2">
-                    Abandon
+                    {isProcessing ? 'Saving...' : 'Abandon'}
                   </span>
                 </button>
               </div>
