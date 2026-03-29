@@ -11,7 +11,8 @@ import {
   Keyboard,
   Info,
   Zap,
-  RotateCcw
+  RotateCcw,
+  LogOut
 } from 'lucide-react';
 import SwipeCard from '../components/SwipeCard';
 import Tooltip from '../components/Tooltip';
@@ -45,6 +46,7 @@ const Session: React.FC<SessionProps> = ({
   const [spaceFreed, setSpaceFreed] = useState(0);
   const [undoStack, setUndoStack] = useState<Action[]>([]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<FileItem | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showGuide, setShowGuide] = useState(true);
@@ -69,6 +71,7 @@ const Session: React.FC<SessionProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!currentFile && !((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey))) return;
       if (showConfirmDialog) return;
+      if (showExitConfirm && e.key !== 'Escape') return;
       if (isSwipeTransitioning) return;
 
       const isSwipeOrOpenKey =
@@ -110,7 +113,13 @@ const Session: React.FC<SessionProps> = ({
           break;
         case 'Escape':
           e.preventDefault();
-          onBack();
+          if (showExitConfirm) {
+            setShowExitConfirm(false);
+          } else if (showShortcuts) {
+            setShowShortcuts(false);
+          } else {
+            setShowExitConfirm(true);
+          }
           break;
         case '?':
           e.preventDefault();
@@ -121,7 +130,7 @@ const Session: React.FC<SessionProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentFile, showConfirmDialog, undoStack, currentIndex, isSwipeTransitioning]);
+  }, [currentFile, showConfirmDialog, showExitConfirm, undoStack, currentIndex, isSwipeTransitioning]);
 
   const handleSwipe = useCallback((direction: SwipeDirection) => {
     if (!currentFile || isSwipeTransitioning) return;
@@ -340,7 +349,7 @@ const Session: React.FC<SessionProps> = ({
         <div className="flex items-center gap-4">
           <Tooltip text="Return to home" shortcut="Esc" position="bottom">
             <button
-              onClick={onBack}
+              onClick={() => setShowExitConfirm(true)}
               className="p-2 hover:bg-slate-800 rounded-lg transition-all duration-200 group"
             >
               <ArrowLeft className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
@@ -610,6 +619,59 @@ const Session: React.FC<SessionProps> = ({
                   className="flex-1 px-5 py-3.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-red-500/25"
                 >
                   Delete File
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Confirm Exit Dialog ── */}
+      <AnimatePresence>
+        {showExitConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="glass rounded-3xl p-8 max-w-sm w-full border border-white/10 shadow-2xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-red-500 to-orange-500" />
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center border border-red-500/20 shadow-inner">
+                  <LogOut className="w-7 h-7 text-red-500 ml-1" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white tracking-tight">End Session?</h3>
+                  <p className="text-slate-400 text-[13px]">
+                    Return to home screen
+                  </p>
+                </div>
+              </div>
+              <p className="text-slate-300 bg-slate-900/50 p-4 rounded-xl mb-8 text-sm border border-white/5 font-medium leading-relaxed">
+                Are you sure you want to end the current cleanup session? You will lose your current spot, but any files already permanently trashed will remain deleted.
+              </p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowExitConfirm(false)}
+                  className="flex-1 px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl transition-all duration-200 border border-white/5"
+                >
+                  Keep Cleaning
+                </button>
+                <button
+                  onClick={() => {
+                    setShowExitConfirm(false);
+                    onBack();
+                  }}
+                  className="flex-1 px-5 py-3.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-red-500/25"
+                >
+                  End Session
                 </button>
               </div>
             </motion.div>
