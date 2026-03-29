@@ -65,7 +65,6 @@ function createWindow(): void {
   if (isDev) {
     // In development, load from the vite dev server
     mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools();
   } else {
     // In production, load the built files
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
