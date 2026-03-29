@@ -75,6 +75,15 @@ jobs:
           PREV_TAG=$(git tag --sort=-creatordate | grep -vx "${CURRENT_TAG}" | head -n 1 || true)
 
           {
+            echo "## Download Guide"
+            echo
+            echo "- Windows: Download \`SwipeClean Setup ${CURRENT_TAG#v}.exe\`"
+            echo "- macOS Apple Silicon (M1/M2/M3): Download \`SwipeClean-${CURRENT_TAG#v}-arm64.dmg\`"
+            echo "- macOS Intel: Download \`SwipeClean-${CURRENT_TAG#v}.dmg\`"
+            echo "- Linux: Download \`SwipeClean-${CURRENT_TAG#v}.AppImage\`"
+            echo
+            echo "Note: \`*.blockmap\` and \`latest*.yml\` are updater metadata files."
+            echo
             echo "## What's New"
             echo
 

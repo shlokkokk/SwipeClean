@@ -40,6 +40,21 @@ SwipeClean is a **desktop application** that transforms file cleanup from a chor
 
 ---
 
+## 📥 Which File Should I Download?
+
+Use this quick guide on the Releases page:
+
+| Your OS | File to Download | Notes |
+|-------|------------------|-------|
+| **Windows** | `SwipeClean Setup x.y.z.exe` | Standard installer |
+| **macOS (Apple Silicon)** | `SwipeClean-x.y.z-arm64.dmg` | For M1/M2/M3 Macs |
+| **macOS (Intel)** | `SwipeClean-x.y.z.dmg` | For Intel Macs |
+| **Linux** | `SwipeClean-x.y.z.AppImage` | Mark executable and run |
+
+Files like `*.blockmap` and `latest*.yml` are update metadata files, not manual installer files.
+
+---
+
 ## 🚀 Quick Start
 
 ### Step 1: Install Dependencies
