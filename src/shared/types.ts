@@ -12,6 +12,13 @@ export interface FileItem {
   status: FileStatus;
 }
 
+// Text preview payload for code and document-like files
+export interface TextPreview {
+  title: string;
+  lines: string[];
+  truncated: boolean;
+}
+
 // File categories for preview handling
 export type FileCategory = 
   | 'image' 
@@ -97,6 +104,7 @@ export interface IPCChannels {
   
   // Preview operations
   'preview:generate': (filePath: string, category: FileCategory) => Promise<string | null>;
+  'preview:getText': (filePath: string, category: FileCategory) => Promise<TextPreview | null>;
   'preview:clearCache': () => Promise<void>;
   
   // Database operations

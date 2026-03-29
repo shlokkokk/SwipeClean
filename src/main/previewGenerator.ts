@@ -4,7 +4,17 @@ import fs from 'fs/promises';
 import path from 'path';
 import { app } from 'electron';
 import crypto from 'crypto';
-import type { FileCategory } from '../shared/types.js';
+import type { FileCategory, TextPreview } from '../shared/types.js';
+
+const TEXT_PREVIEW_EXTENSIONS = new Set([
+  'txt', 'md', 'markdown', 'rtf', 'csv', 'tsv',
+  'js', 'ts', 'jsx', 'tsx', 'html', 'css', 'scss', 'sass', 'less',
+  'json', 'xml', 'yaml', 'yml', 'py', 'java', 'cpp', 'c', 'h', 'hpp',
+  'php', 'rb', 'go', 'rs', 'swift', 'kt', 'sql', 'sh', 'bash', 'zsh',
+  'ps1', 'ini', 'log'
+]);
+
+const MAX_TEXT_PREVIEW_LINES = 160;
 
 export class PreviewGenerator {
   private previewDir: string;
@@ -47,6 +57,86 @@ export class PreviewGenerator {
     } catch {
       return false;
     }
+  }
+
+  async generateTextPreview(filePath: string, category: FileCategory): Promise<TextPreview | null> {
+    if (!['code', 'document', 'spreadsheet'].includes(category)) {
+      return null;
+    }
+
+    const extension = path.extname(filePath).toLowerCase().slice(1);
+    if (!TEXT_PREVIEW_EXTENSIONS.has(extension)) {
+      return null;
+    }
+
+    try {
+      const fileHandle = await fs.open(filePath, 'r');
+      const maxBytes = 64 * 1024;
+      const buffer = Buffer.alloc(maxBytes);
+      const { bytesRead } = await fileHandle.read(buffer, 0, maxBytes, 0);
+      await fileHandle.close();
+
+      if (bytesRead <= 0) {
+        return null;
+      }
+
+      const slice = buffer.subarray(0, bytesRead);
+      if (this.looksBinary(slice)) {
+        return null;
+      }
+
+      const content = slice.toString('utf8').replace(/\r\n/g, '\n');
+      const allLines = content.split('\n');
+      const cleanedLines = allLines.map(line => line.replace(/\t/g, '  ').trimEnd());
+
+      const previewLines = cleanedLines.slice(0, MAX_TEXT_PREVIEW_LINES);
+      if (previewLines.length === 0) {
+        return {
+          title: path.basename(filePath),
+          lines: ['(No readable text in this file)'],
+          truncated: false
+        };
+      }
+
+      return {
+        title: this.getTextPreviewTitle(filePath, extension, previewLines),
+        lines: previewLines,
+        truncated: cleanedLines.length > previewLines.length
+      };
+    } catch (error) {
+      console.warn('[Preview] Could not generate text preview for:', filePath, error);
+      return null;
+    }
+  }
+
+  private looksBinary(buffer: Buffer): boolean {
+    const inspectLen = Math.min(buffer.length, 1024);
+    let suspiciousBytes = 0;
+
+    for (let i = 0; i < inspectLen; i++) {
+      const byte = buffer[i];
+      if (byte === 0) {
+        return true;
+      }
+
+      const isControl = byte < 7 || (byte > 14 && byte < 32);
+      if (isControl) {
+        suspiciousBytes++;
+      }
+    }
+
+    return inspectLen > 0 && suspiciousBytes / inspectLen > 0.2;
+  }
+
+  private getTextPreviewTitle(filePath: string, extension: string, lines: string[]): string {
+    if (extension === 'md' || extension === 'markdown') {
+      const heading = lines.find(line => line.startsWith('#'));
+      if (heading) {
+        return heading.replace(/^#+\s*/, '').trim();
+      }
+    }
+
+    return path.basename(filePath);
   }
 
   async generatePreview(filePath: string, category: FileCategory): Promise<string | null> {

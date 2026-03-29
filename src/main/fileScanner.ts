@@ -66,6 +66,8 @@ const FILE_TYPE_MAP: Record<string, FileCategory> = {
   doc: 'document',
   docx: 'document',
   txt: 'document',
+  md: 'document',
+  markdown: 'document',
   rtf: 'document',
   odt: 'document',
   pages: 'document',

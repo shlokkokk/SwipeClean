@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Preview operations
   generatePreview: (filePath: string, category: string) => ipcRenderer.invoke('preview:generate', filePath, category),
+  getTextPreview: (filePath: string, category: string) => ipcRenderer.invoke('preview:getText', filePath, category),
   clearPreviewCache: () => ipcRenderer.invoke('preview:clearCache'),
 
   // Database operations
@@ -35,6 +36,7 @@ declare global {
       moveToTrash: (filePath: string) => Promise<{ success: boolean; error?: string }>;
       openExternally: (filePath: string) => Promise<void>;
       generatePreview: (filePath: string, category: string) => Promise<string | null>;
+      getTextPreview: (filePath: string, category: string) => Promise<{ title: string; lines: string[]; truncated: boolean } | null>;
       clearPreviewCache: () => Promise<void>;
       getRecentFolders: () => Promise<any[]>;
       addRecentFolder: (folder: any) => Promise<void>;

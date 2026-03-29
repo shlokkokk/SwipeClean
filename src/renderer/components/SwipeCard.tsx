@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import { 
   Image, 
@@ -17,7 +19,7 @@ import {
   SkipForward
 } from 'lucide-react';
 import Tooltip from './Tooltip';
-import type { FileItem, SwipeDirection } from '@shared/types';
+import type { FileItem, SwipeDirection, TextPreview } from '@shared/types';
 
 interface SwipeCardProps {
   file: FileItem;
@@ -83,7 +85,10 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
   onOpenFile 
 }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [textPreview, setTextPreview] = useState<TextPreview | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [maxVisibleLines, setMaxVisibleLines] = useState(10);
+  const textBodyRef = useRef<HTMLDivElement | null>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-15, 15]);
@@ -120,25 +125,79 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
   );
 
   useEffect(() => {
-    loadPreview();
-  }, [file]);
+    let isCancelled = false;
 
-  const loadPreview = async () => {
-    setPreviewUrl(null);
-    if (file.category === 'image' || file.category === 'pdf') {
-      setIsLoadingPreview(true);
-      try {
-        const preview = await window.electronAPI.generatePreview(file.path, file.category);
-        if (preview) {
-          setPreviewUrl(preview);
-        }
-      } catch (error) {
-        console.error('[Preview] Error loading preview:', error);
-      } finally {
+    const loadPreview = async () => {
+      setPreviewUrl(null);
+      setTextPreview(null);
+
+      const needsImagePreview = file.category === 'image' || file.category === 'pdf';
+      const needsTextPreview = file.category === 'code' || file.category === 'document' || file.category === 'spreadsheet';
+
+      if (!needsImagePreview && !needsTextPreview) {
         setIsLoadingPreview(false);
+        return;
       }
-    }
-  };
+
+      setIsLoadingPreview(true);
+
+      try {
+        const [imagePreview, extractedTextPreview] = await Promise.all([
+          needsImagePreview
+            ? window.electronAPI.generatePreview(file.path, file.category)
+            : Promise.resolve(null),
+          needsTextPreview
+            ? window.electronAPI.getTextPreview(file.path, file.category)
+            : Promise.resolve(null)
+        ]);
+
+        if (isCancelled) return;
+        setPreviewUrl(imagePreview);
+        setTextPreview(extractedTextPreview);
+      } catch (error) {
+        if (!isCancelled) {
+          console.error('[Preview] Error loading preview:', error);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingPreview(false);
+        }
+      }
+    };
+
+    void loadPreview();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [file.path, file.category]);
+
+  useEffect(() => {
+    if (!textBodyRef.current) return;
+
+    const lineHeightPx = 18;
+
+    const recompute = () => {
+      if (!textBodyRef.current) return;
+      const availableHeight = textBodyRef.current.clientHeight;
+      const reserveForTruncationNote = textPreview?.truncated ? 24 : 0;
+      const fitCount = Math.max(4, Math.floor((availableHeight - reserveForTruncationNote) / lineHeightPx));
+      setMaxVisibleLines(fitCount);
+    };
+
+    recompute();
+    const observer = new ResizeObserver(recompute);
+    observer.observe(textBodyRef.current);
+
+    return () => observer.disconnect();
+  }, [textPreview?.truncated, file.id]);
+
+  const visibleTextLines = useMemo(() => {
+    if (!textPreview) return [];
+    return textPreview.lines.slice(0, maxVisibleLines);
+  }, [textPreview, maxVisibleLines]);
+
+  const shouldShowMoreLines = !!textPreview && (textPreview.truncated || textPreview.lines.length > visibleTextLines.length);
 
   const handleDragEnd = (_event: any, info: PanInfo) => {
     const threshold = 100;
@@ -210,6 +269,45 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
               className="w-full h-full object-contain"
               draggable={false}
             />
+          ) : textPreview ? (
+            <div className="relative z-10 w-full h-full p-5 sm:p-6 overflow-hidden">
+              <div className="h-full rounded-2xl bg-slate-900/80 border border-white/10 shadow-inner flex flex-col overflow-hidden">
+                <div className="px-4 py-3 border-b border-white/10 bg-slate-950/60">
+                  <p className="text-xs uppercase tracking-[0.2em] text-cyan-300/80 font-bold">Text Preview</p>
+                  <h4 className="text-sm sm:text-base text-slate-100 font-semibold truncate mt-1" title={textPreview.title}>
+                    {textPreview.title}
+                  </h4>
+                </div>
+                <div ref={textBodyRef} className="flex-1 overflow-hidden px-4 py-3 font-mono text-[11px] sm:text-[12px] leading-[18px] text-slate-300 flex flex-col relative">
+                  {(file.extension === 'md' || file.extension === 'markdown') ? (
+                    <div className="flex-1 overflow-hidden relative">
+                      <div className="prose prose-sm prose-invert max-w-none pb-4 font-sans leading-normal pointer-events-none select-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {textPreview.lines.join('\n')}
+                        </ReactMarkdown>
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 h-10 bg-linear-to-t from-slate-900/90 to-transparent pointer-events-none" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex-1 overflow-hidden">
+                      {visibleTextLines.map((line, index) => (
+                        <div key={`${index}-${line}`} className="flex items-start gap-3 min-h-[18px]">
+                          <span className="text-slate-500 w-6 text-right shrink-0 select-none opacity-50">{index + 1}</span>
+                          <span className="truncate whitespace-pre">{line}</span>
+                        </div>
+                      ))}
+                      </div>
+                      {shouldShowMoreLines && (
+                        <div className="pt-2 pb-1 text-cyan-300/80 text-[11px] uppercase tracking-wider font-semibold shrink-0 select-none">
+                          ...more lines in file
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
           ) : isLoadingPreview ? (
             <div className="w-full h-full animate-shimmer bg-slate-200 flex items-center justify-center">
               <div className="flex flex-col items-center gap-3">

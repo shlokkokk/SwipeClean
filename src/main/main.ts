@@ -153,6 +153,15 @@ function setupIPC(): void {
     }
   });
 
+  ipcMain.handle('preview:getText', async (_, filePath: string, category: string) => {
+    try {
+      return await previewGenerator.generateTextPreview(filePath, category);
+    } catch (error) {
+      console.error('[IPC] Error generating text preview:', error);
+      return null;
+    }
+  });
+
   ipcMain.handle('preview:clearCache', async () => {
     try {
       await previewGenerator.clearCache();
