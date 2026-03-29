@@ -55,6 +55,7 @@
       "node_modules/**/*"
     ],
     "mac": {
+      "icon": "assets/icon.png",
       "category": "public.app-category.utilities",
       "target": [
         {
@@ -67,6 +68,7 @@
       ]
     },
     "win": {
+      "icon": "assets/icon.ico",
       "target": [
         {
           "target": "nsis",
@@ -76,7 +78,13 @@
         }
       ]
     },
+    "nsis": {
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico"
+    },
     "linux": {
+      "icon": "assets/icon.png",
       "target": [
         {
           "target": "AppImage",

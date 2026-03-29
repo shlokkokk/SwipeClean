@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, protocol } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fsSync from 'fs';
 import fs from 'fs/promises';
 import { DatabaseManager } from './database.js';
 import { FileScanner } from './fileScanner.js';
@@ -20,12 +21,35 @@ let mainWindow: BrowserWindow | null = null;
 // Determine if we're in development mode
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
+function getWindowIconPath(): string | undefined {
+  const windowsCandidates = [
+    path.join(app.getAppPath(), 'assets', 'icon.ico'),
+    path.join(process.cwd(), 'assets', 'icon.ico'),
+    path.join(__dirname, '../renderer/assets/icon.ico')
+  ];
+
+  const pngCandidates = [
+    path.join(app.getAppPath(), 'assets', 'icon.png'),
+    path.join(process.cwd(), 'assets', 'icon.png'),
+    path.join(__dirname, '../renderer/assets/icon.png')
+  ];
+
+  const candidates = process.platform === 'win32'
+    ? [...windowsCandidates, ...pngCandidates]
+    : [...pngCandidates, ...windowsCandidates];
+
+  return candidates.find((candidate) => fsSync.existsSync(candidate));
+}
+
 function createWindow(): void {
+  const iconPath = getWindowIconPath();
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     minWidth: 900,
     minHeight: 600,
+    icon: iconPath,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -58,6 +82,10 @@ function createWindow(): void {
 
 // App lifecycle
 app.whenReady().then(() => {
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('com.swipeclean.app');
+  }
+
   // Register custom protocol for serving preview files
   protocol.registerBufferProtocol('preview', (request, callback) => {
     (async () => {
