@@ -5,6 +5,10 @@
   "main": "dist/main/main.js",
   "author": "SwipeClean",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shlokkokk/SwipeClean.git"
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build && node scripts/fix-build.cjs",
@@ -93,6 +97,11 @@
           ]
         }
       ]
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "shlokkokk",
+      "repo": "SwipeClean"
     }
   }
 }
