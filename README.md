@@ -8,6 +8,10 @@ Clean up any folder while having fun! SwipeClean gamifies file management with a
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)]()
 [![GitHub](https://img.shields.io/badge/GitHub-shlokkokk-black?logo=github)](https://github.com/shlokkokk/SwipeClean)
 
+## 🕹️ Play Mode
+
+**[🎮 Jump To Swipe Arena Interactive](#play-game)**
+
 ---
 
 ## 🎮 What Is SwipeClean?
@@ -58,101 +62,7 @@ Pick your sort order and begin the cleanup game.
 
 ---
 
-## 🎯 Features
-
-### 📁 Smart File Scanning
-- Recursive folder scanning (toggle in settings)
-- Filters system files automatically (.DS_Store, Thumbs.db, etc.)
-- Works with any folder size
-
-### 👀 Intelligent Previews
-| File Type | Preview |
-|-----------|---------|
-| 📷 Images | Full display (JPG, PNG, GIF, WebP) |
-| 🎬 Videos | Thumbnail at 10% mark |
-| 📄 PDFs | First page rendered |
-| 📊 Documents | Type-specific previews |
-| 💻 Code | Syntax-highlighted snippet |
-| ❓ Unknown | Generic file icon + size |
-
-### 🎮 Multiple Sorting Modes
-- **Oldest First** ⭐ (recommended) – Vintage files first
-- **Newest First** – Fresh files first
-- **Date Range** – Custom time window
-- **Largest First** – Heavy files first
-- **By Type** – Grouped by extension
-
-### ⌨️ Full Keyboard Control
-| Key | Action |
-|-----|--------|
-| **→** or **D** | Keep |
-| **←** or **A** | Delete |
-| **↑** or **W** | Skip |
-| **Space** | Open file |
-| **Ctrl+Z** | Undo |
-| **Esc** | Pause |
-
-### 📊 Live Stats Dashboard
-- Files kept / deleted / skipped
-- Space freed in real-time
-- Progress bar with file count
-- Session history
-
-### 🔒 Safety First
-- ✅ Default move to trash (recoverable)
-- ✅ Protected system directories
-- ✅ Full undo history (10+ actions)
-- ✅ Optional delete confirmation
-- ✅ 0 permanent data loss by default
-
----
-
-## 🎨 User Interface
-
-### Dark Brutalist Design
-Our interface uses a modern dark theme with:
-- High-contrast white-on-dark text
-- Smooth Framer Motion animations
-- Sharp geometric UI elements
-- Responsive hover effects
-- Accessibility-first color scheme
-
-### Visual Hierarchy
-```
-Home Screen (Select Folder)
-    ↓
-Sorting Modal (Choose Order)
-    ↓
-Session Screen (Swipe Cards)
-    ↓
-Summary Screen (Celebrate!)
-```
-
----
-
-## 💾 Installation
-
-### Requirements
-- **Node.js** v20 or higher
-- **npm** (comes with Node.js)
-- Windows 10+, macOS 11+, or Ubuntu 20.04+
-
-### From Source
-```bash
-# Clone the repository
-git clone https://github.com/shlokkokk/SwipeClean.git
-cd swipeclean
-
-# Install dependencies
-npm install
-
-# Run development mode
-npm run dev
-```
-
----
-
-## 🛠️ Tech Stack
+## ️ Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -346,6 +256,270 @@ Having issues? Check these first:
 I was tired of spending **hours** dragging files to trash one-by-one. SwipeClean was born from frustration with boring file management. By combining the satisfaction of a swiping game with actual productivity, file cleanup became something I actually look forward to.
 
 Maybe you will too! 🎮
+
+---
+
+<a id="play-game"></a>
+## 🎮 Swipe Arena Interactive (Click To Play)
+
+<p align="center">
+        <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=800&size=22&pause=850&color=00E676&center=true&vCenter=true&width=900&lines=SWIPE+ARENA+%2F%2F+INTERACTIVE+MODE;5+ROUNDS+%7C+SCORE+ATTACK+%7C+ONE+LIFE;Click+choices+to+play+inside+README" alt="Swipe Arena interactive banner" />
+</p>
+
+<p align="center">
+    <b>Arcade Cleanup Protocol Activated</b><br/>
+    <sub>Fast decisions. Smart deletes. Zero regret.</sub>
+</p>
+
+| HUD | Value |
+|-----|-------|
+| Start Score | **0** |
+| Perfect Move | **+3** |
+| Safe Move | **+1** |
+| Bad Move | **-2** |
+| Win Condition | **12+ points** |
+
+### Mission Map
+
+`Start` -> `Round 1` -> `Round 2` -> `Round 3` -> `Round 4` -> `Round 5` -> `Rank`
+
+- Quick jump: [Start Mission](#arena-start)
+- Quick jump: [Final Rank](#arena-rank)
+
+### Start Mission
+
+<a id="arena-start"></a>
+You are dropped into a chaotic Downloads folder at 2:17 AM.
+
+Choose your first move: **[▶ Enter Round 1](#arena-r1)**
+
+---
+
+### Round 1
+
+<a id="arena-r1"></a>
+> **File Card:** `IMG_4021_blurry_duplicate.jpg` (8.4 MB)
+>
+> **Signal:** Duplicate + blurry image
+>
+> **Risk:** Low
+
+- [👉 Keep](#arena-r1-keep)
+- [👈 Delete](#arena-r1-delete)
+- [👆 Skip](#arena-r1-skip)
+
+<a id="arena-r1-keep"></a>
+<details>
+<summary>Reveal result if you picked Keep</summary>
+
+**R1 Keep** -> Clutter survives. **-2** points.  
+Next: [Go to Round 2](#arena-r2)
+
+</details>
+
+<a id="arena-r1-delete"></a>
+<details>
+<summary>Reveal result if you picked Delete</summary>
+
+**R1 Delete** -> Sharp cleanup call. **+3** points.  
+Next: [Go to Round 2](#arena-r2)
+
+</details>
+
+<a id="arena-r1-skip"></a>
+<details>
+<summary>Reveal result if you picked Skip</summary>
+
+**R1 Skip** -> Cautious scan complete. **+1** point.  
+Next: [Go to Round 2](#arena-r2)
+
+</details>
+
+---
+
+### Round 2
+
+<a id="arena-r2"></a>
+> **File Card:** `tax_receipts_2025.zip` (62 MB)
+>
+> **Signal:** Legal/finance archive
+>
+> **Risk:** High
+
+- [👉 Keep](#arena-r2-keep)
+- [👈 Delete](#arena-r2-delete)
+- [👆 Skip](#arena-r2-skip)
+
+<a id="arena-r2-keep"></a>
+<details>
+<summary>Reveal result if you picked Keep</summary>
+
+**R2 Keep** -> Correct. Legal docs should stay. **+3** points.  
+Next: [Go to Round 3](#arena-r3)
+
+</details>
+
+<a id="arena-r2-delete"></a>
+<details>
+<summary>Reveal result if you picked Delete</summary>
+
+**R2 Delete** -> High risk decision. **-2** points.  
+Next: [Go to Round 3](#arena-r3)
+
+</details>
+
+<a id="arena-r2-skip"></a>
+<details>
+<summary>Reveal result if you picked Skip</summary>
+
+**R2 Skip** -> Defensive move accepted. **+1** point.  
+Next: [Go to Round 3](#arena-r3)
+
+</details>
+
+---
+
+### Round 3
+
+<a id="arena-r3"></a>
+> **File Card:** `screen_recording_test_export_v9.mp4` (2.1 GB)
+>
+> **Signal:** Temporary export candidate
+>
+> **Risk:** Medium
+
+- [👉 Keep](#arena-r3-keep)
+- [👈 Delete](#arena-r3-delete)
+- [👆 Skip](#arena-r3-skip)
+
+<a id="arena-r3-keep"></a>
+<details>
+<summary>Reveal result if you picked Keep</summary>
+
+**R3 Keep** -> Storage pain unlocked. **-2** points.  
+Next: [Go to Round 4](#arena-r4)
+
+</details>
+
+<a id="arena-r3-delete"></a>
+<details>
+<summary>Reveal result if you picked Delete</summary>
+
+**R3 Delete** -> Massive cleanup win. **+3** points.  
+Next: [Go to Round 4](#arena-r4)
+
+</details>
+
+<a id="arena-r3-skip"></a>
+<details>
+<summary>Reveal result if you picked Skip</summary>
+
+**R3 Skip** -> Acceptable caution. **+1** point.  
+Next: [Go to Round 4](#arena-r4)
+
+</details>
+
+---
+
+### Round 4
+
+<a id="arena-r4"></a>
+> **File Card:** `resume_2023_old_draft.pdf` (0.9 MB)
+>
+> **Signal:** Old but potentially useful document
+>
+> **Risk:** Medium
+
+- [👉 Keep](#arena-r4-keep)
+- [👈 Delete](#arena-r4-delete)
+- [👆 Skip](#arena-r4-skip)
+
+<a id="arena-r4-keep"></a>
+<details>
+<summary>Reveal result if you picked Keep</summary>
+
+**R4 Keep** -> Not wrong, still useful. **+1** point.  
+Next: [Go to Round 5](#arena-r5)
+
+</details>
+
+<a id="arena-r4-delete"></a>
+<details>
+<summary>Reveal result if you picked Delete</summary>
+
+**R4 Delete** -> Maybe too aggressive. **-2** points.  
+Next: [Go to Round 5](#arena-r5)
+
+</details>
+
+<a id="arena-r4-skip"></a>
+<details>
+<summary>Reveal result if you picked Skip</summary>
+
+**R4 Skip** -> Best strategic move. **+3** points.  
+Next: [Go to Round 5](#arena-r5)
+
+</details>
+
+---
+
+### Round 5
+
+<a id="arena-r5"></a>
+> **File Card:** `setup_tmp_cache.log` (420 MB)
+>
+> **Signal:** Temporary cache/log data
+>
+> **Risk:** Low
+
+- [👉 Keep](#arena-r5-keep)
+- [👈 Delete](#arena-r5-delete)
+- [👆 Skip](#arena-r5-skip)
+
+<a id="arena-r5-keep"></a>
+<details>
+<summary>Reveal result if you picked Keep</summary>
+
+**R5 Keep** -> Bloat remains. **-2** points.  
+Finish: [Open Final Rank](#arena-rank)
+
+</details>
+
+<a id="arena-r5-delete"></a>
+<details>
+<summary>Reveal result if you picked Delete</summary>
+
+**R5 Delete** -> Clean final strike. **+3** points.  
+Finish: [Open Final Rank](#arena-rank)
+
+</details>
+
+<a id="arena-r5-skip"></a>
+<details>
+<summary>Reveal result if you picked Skip</summary>
+
+**R5 Skip** -> Safe but slower cleanup. **+1** point.  
+Finish: [Open Final Rank](#arena-rank)
+
+</details>
+
+---
+
+### Final Rank
+
+<a id="arena-rank"></a>
+Add your score and claim your title:
+
+| Score | Rank | Title |
+|------:|------|-------|
+| 12 to 15 | 🏆 S Tier | Folder Assassin |
+| 7 to 11 | ⚔️ A Tier | Clean-up Knight |
+| 2 to 6 | 🧹 B Tier | Organized Human |
+| -10 to 1 | 🐢 C Tier | Sentimental Hoarder |
+
+<p align="center">
+    <b>[🔁 Play Again](#arena-start)</b> • <b>[⬆ Back To Top](#-swipeclean)</b>
+</p>
 
 ---
 
