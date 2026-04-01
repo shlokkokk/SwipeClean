@@ -8,6 +8,17 @@ Clean up any folder while having fun! SwipeClean gamifies file management with a
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)]()
 [![GitHub](https://img.shields.io/badge/GitHub-shlokkokk-black?logo=github)](https://github.com/shlokkokk/SwipeClean)
 
+## 🆕 Latest Release (v1.0.6)
+
+### Highlights
+- 🎨 **Light/Dark Theme Toggle** in Settings with persisted preference
+- 📚 **Live Stack HUD** in session mode to view upcoming deck + undo buffer
+- ⌨️ **New Shortcut: `E`** to toggle Stack HUD instantly during swiping
+- 🧭 **Expanded About Screen** with workflow blueprint, controls, and support links
+- 🧩 **Theme-aware UI tokens** applied across app surfaces and controls
+
+---
+
 ## 🕹️ Play Mode
 
 **[🎮 Jump To Swipe Arena Interactive](#play-game)**
@@ -33,9 +44,10 @@ SwipeClean is a **desktop application** that transforms file cleanup from a chor
 | 🔄 **Undo-friendly** – Change your mind anytime (Ctrl+Z) |
 | 👁️ **Smart previews** – See images, PDFs, and text/code previews before deciding |
 | ⌨️ **Keyboard shortcuts** – D=Keep, A=Delete, W=Skip |
+| 📚 **Stack HUD** – See incoming files and undo buffer in real time |
 | 💾 **Track progress** – See how much space you're freeing |
 | 🛡️ **Safety-focused** – Uses system trash flow first, with recovery-friendly behavior |
-| 🎨 **Beautiful dark theme** – Easy on the eyes during long sessions |
+| 🎨 **Light + Dark themes** – Switch modes from Settings |
 | 🚀 **Lightning fast** – Built on Electron + React |
 
 ---
@@ -122,6 +134,12 @@ Cards appear one-by-one with:
 - Or click buttons
 - Or use keyboard (A/D/W keys)
 
+### 3.5️⃣ Use Live Stack HUD (New)
+- Press **E** during a session to toggle the HUD panel
+- View the next files in queue before they appear
+- Monitor active undo buffer capacity and status
+- See delete actions that get committed once they fall off undo history
+
 ### 4️⃣ Watch Your Progress
 Real-time stats at the bottom:
 - ✅ Files kept
@@ -149,6 +167,9 @@ Customize SwipeClean in the **Settings** screen:
 ### Performance Tuning
 - ↩️ **Undo History Depth** — Limit how many actions can be undone
 - 🎚️ **Preview Cache Limit** — Control cached preview capacity
+
+### Appearance
+- 🌗 **Theme Toggle** — Switch between Dark and Light modes
 
 ### Danger Zone
 - 🗑️ **Clear Preview Cache** — Free up disk space

@@ -1,6 +1,6 @@
 {
   "name": "swipeclean",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Gamified file cleanup desktop application with Tinder-style swiping",
   "main": "dist/main/main.js",
   "author": "SwipeClean",
