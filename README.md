@@ -8,14 +8,13 @@ Clean up any folder while having fun! SwipeClean gamifies file management with a
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)]()
 [![GitHub](https://img.shields.io/badge/GitHub-shlokkokk-black?logo=github)](https://github.com/shlokkokk/SwipeClean)
 
-## 🆕 Latest Release (v1.0.6)
+## 🆕 Latest Release (v1.0.7)
 
 ### Highlights
-- 🎨 **Light/Dark Theme Toggle** in Settings with persisted preference
-- 📚 **Live Stack HUD** in session mode to view upcoming deck + undo buffer
-- ⌨️ **New Shortcut: `E`** to toggle Stack HUD instantly during swiping
-- 🧭 **Expanded About Screen** with workflow blueprint, controls, and support links
-- 🧩 **Theme-aware UI tokens** applied across app surfaces and controls
+- 📚 **Live Stack HUD overflow fix** keeps the undo history contained inside its own scroll area
+- ⌨️ **Keyboard Shortcuts tooltip** now opens lower-left so it stays on screen
+- 🧭 **Undo buffer toggle** stays compact on one line while still exposing the full history
+- 🧩 **Trash commit notice** no longer makes the outer HUD card scroll
 
 ---
 

@@ -409,7 +409,7 @@ const Session: React.FC<SessionProps> = ({
               </button>
             </Tooltip>
 
-            <Tooltip text="Keyboard Shortcuts" shortcut="?" position="bottom">
+            <Tooltip text="Keyboard Shortcuts" shortcut="?" position="bottom-left-slant">
               <button 
                 onClick={() => setShowShortcuts(true)}
                 className="w-11 h-11 border border-white/5 rounded-xl bg-[#0d1320] flex items-center justify-center shadow-[0_5px_15px_rgba(0,0,0,0.3)] hover:bg-[#151f32] hover:border-[#00e5ff]/30 transition-all duration-200 group"

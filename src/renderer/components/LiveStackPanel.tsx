@@ -94,6 +94,7 @@ const LiveStackPanel: React.FC<LiveStackPanelProps> = ({
   committed
 }) => {
   const [flashCommitted, setFlashCommitted] = useState<CommittedInfo | null>(null);
+  const [showAllUndo, setShowAllUndo] = useState(false);
 
   useEffect(() => {
     if (!committed) return;
@@ -106,14 +107,14 @@ const LiveStackPanel: React.FC<LiveStackPanelProps> = ({
     return fileList.slice(currentIndex + 1, currentIndex + 6);
   }, [fileList, currentIndex]);
 
-  const undoTop = useMemo(() => {
-    return undoStack.slice(0, 5);
-  }, [undoStack]);
+  const undoVisible = useMemo(() => {
+    return showAllUndo ? undoStack : undoStack.slice(0, 5);
+  }, [showAllUndo, undoStack]);
 
   return (
     <LayoutGroup>
       <div className="w-[320px] shrink-0">
-        <div className="gc-card overflow-hidden border border-white/5 bg-[#0a0e17]/60 max-h-[calc(100vh-260px)] overflow-y-auto">
+        <div className="gc-card flex max-h-[calc(100vh-260px)] flex-col overflow-hidden border border-white/5 bg-[#0a0e17]/60">
           <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
             <div className="text-[10px] font-black uppercase tracking-[0.25em] text-[#00e5ff]/70">
               Incoming Deck
@@ -165,91 +166,102 @@ const LiveStackPanel: React.FC<LiveStackPanelProps> = ({
             </div>
           </div>
 
-          <div className="border-t border-white/5 px-5 py-4">
-            <div className="flex items-center justify-between mb-3">
+          <div className="border-t border-white/5 px-5 py-4 flex min-h-0 flex-1 flex-col">
+            <div className="flex items-center justify-between gap-2 mb-3">
               <div className="text-[11px] font-black uppercase tracking-widest text-white/90">
                 UNDO BUFFER
               </div>
-              <div className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">
-                Active: {undoStack.length} / {maxUndoActions} Slots
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="whitespace-nowrap text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest">
+                  Active: {undoStack.length} / {maxUndoActions} Slots
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAllUndo((value) => !value)}
+                  className="shrink-0 whitespace-nowrap rounded-md border border-[#00e5ff]/20 bg-[#00e5ff]/10 px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-[#00e5ff] transition-colors hover:border-[#00e5ff]/40 hover:bg-[#00e5ff]/15"
+                >
+                  {showAllUndo ? 'Show less' : 'View all'}
+                </button>
               </div>
             </div>
 
-            <div className="rounded-xl border border-white/5 bg-black/20 overflow-hidden">
-              <AnimatePresence initial={false} mode="popLayout">
-                {undoTop.length === 0 ? (
-                  <motion.div
-                    key="undo-empty"
-                    {...rowMotion}
-                    className="px-4 py-3 text-[11px] font-mono text-slate-500"
-                  >
-                    Buffer empty.
-                  </motion.div>
-                ) : (
-                  undoTop.map((a) => {
-                    const file = fileList.find((f) => f.id === a.fileId);
-                    return (
-                      <motion.div
-                        key={a.id}
-                        layout="position"
-                        layoutId={`undo-${a.fileId}`}
-                        {...rowMotion}
-                        transition={crispLayoutTransition}
-                        className="flex items-center gap-3 px-4 py-2.5 border-t border-white/5 first:border-t-0"
-                      >
-                        {a.newStatus === 'kept' ? (
-                          <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                        ) : a.newStatus === 'deleted' ? (
-                          <Trash2 className="w-4 h-4 text-rose-400 shrink-0" />
-                        ) : (
-                          <SkipForward className="w-4 h-4 text-blue-400 shrink-0" />
-                        )}
-
-                        <div className="min-w-0 flex-1">
-                          <div className="text-[11px] font-mono font-bold text-slate-200 truncate">
-                            {file?.name ?? 'Unknown file'}
-                          </div>
-                          <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest truncate">
-                            {file?.extension || 'none'}
-                          </div>
-                        </div>
-
-                        <div
-                          className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded border ${statusPillClass(
-                            a.newStatus
-                          )}`}
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className={`rounded-xl border border-white/5 bg-black/20 overflow-hidden ${showAllUndo ? 'flex-1 min-h-0 overflow-y-auto' : ''}`}>
+                <AnimatePresence initial={false} mode="popLayout">
+                  {undoVisible.length === 0 ? (
+                    <motion.div
+                      key="undo-empty"
+                      {...rowMotion}
+                      className="px-4 py-3 text-[11px] font-mono text-slate-500"
+                    >
+                      Buffer empty.
+                    </motion.div>
+                  ) : (
+                    undoVisible.map((a) => {
+                      const file = fileList.find((f) => f.id === a.fileId);
+                      return (
+                        <motion.div
+                          key={a.id}
+                          layout="position"
+                          layoutId={`undo-${a.fileId}`}
+                          {...rowMotion}
+                          transition={crispLayoutTransition}
+                          className="flex items-center gap-3 px-4 py-2.5 border-t border-white/5 first:border-t-0"
                         >
-                          {statusLabel(a.newStatus)}
+                          {a.newStatus === 'kept' ? (
+                            <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                          ) : a.newStatus === 'deleted' ? (
+                            <Trash2 className="w-4 h-4 text-rose-400 shrink-0" />
+                          ) : (
+                            <SkipForward className="w-4 h-4 text-blue-400 shrink-0" />
+                          )}
+
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[11px] font-mono font-bold text-slate-200 truncate">
+                              {file?.name ?? 'Unknown file'}
+                            </div>
+                            <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest truncate">
+                              {file?.extension || 'none'}
+                            </div>
+                          </div>
+
+                          <div
+                            className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded border ${statusPillClass(
+                              a.newStatus
+                            )}`}
+                          >
+                            {statusLabel(a.newStatus)}
+                          </div>
+                        </motion.div>
+                      );
+                    })
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <AnimatePresence>
+                {flashCommitted?.action && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="mt-3 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-black uppercase tracking-[0.25em] text-rose-400/90">
+                          Committed to Trash
                         </div>
-                      </motion.div>
-                    );
-                  })
+                        <div className="text-[11px] font-mono font-bold text-slate-200 truncate mt-1">
+                          {flashCommitted.file?.name ?? 'Unknown file'}
+                        </div>
+                      </div>
+                      <Trash2 className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                    </div>
+                  </motion.div>
                 )}
               </AnimatePresence>
             </div>
-
-            <AnimatePresence>
-              {flashCommitted?.action && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  className="mt-3 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-[10px] font-black uppercase tracking-[0.25em] text-rose-400/90">
-                        Committed to Trash
-                      </div>
-                      <div className="text-[11px] font-mono font-bold text-slate-200 truncate mt-1">
-                        {flashCommitted.file?.name ?? 'Unknown file'}
-                      </div>
-                    </div>
-                    <Trash2 className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </div>
       </div>

@@ -51,7 +51,7 @@ temp/
 
 # Private documentation (not for GitHub)
 _private-docs/
-RELEASE_NOTES.md
+
 # Electron
 electron-builder.env
 
