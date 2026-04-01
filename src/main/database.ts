@@ -66,7 +66,8 @@ export class DatabaseManager {
       recursiveScan: true,
       showSystemFiles: false,
       maxUndoActions: 10,
-      previewCacheSize: 100
+      previewCacheSize: 100,
+      theme: 'dark'
     };
 
     const existingSettings = this.db.prepare('SELECT COUNT(*) as count FROM settings').get() as { count: number };
@@ -180,7 +181,8 @@ export class DatabaseManager {
       recursiveScan: settings.recursiveScan ?? true,
       showSystemFiles: settings.showSystemFiles ?? false,
       maxUndoActions: settings.maxUndoActions ?? 10,
-      previewCacheSize: settings.previewCacheSize ?? 100
+      previewCacheSize: settings.previewCacheSize ?? 100,
+      theme: settings.theme ?? 'dark'
     };
   }
 

@@ -74,6 +74,7 @@ export interface AppSettings {
   showSystemFiles: boolean;
   maxUndoActions: number;
   previewCacheSize: number;
+  theme: 'dark' | 'light';
 }
 
 // Stats for the session screen

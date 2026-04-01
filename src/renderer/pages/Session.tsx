@@ -12,10 +12,12 @@ import {
   RotateCcw,
   LogOut,
   Gamepad2,
-  Target
+  Target,
+  Layers
 } from 'lucide-react';
 import SwipeCard from '../components/SwipeCard';
 import Tooltip from '../components/Tooltip';
+import LiveStackPanel from '../components/LiveStackPanel';
 import type { FileItem, SwipeDirection, AppSettings, Action } from '@shared/types';
 
 interface SessionProps {
@@ -53,6 +55,11 @@ const Session: React.FC<SessionProps> = ({
   const [exitDirections, setExitDirections] = useState<Record<string, SwipeDirection>>({});
   const [isSwipeTransitioning, setIsSwipeTransitioning] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showLiveStack, setShowLiveStack] = useState(false);
+  const [committedToTrash, setCommittedToTrash] = useState<{
+    action: Action;
+    file: FileItem | null;
+  } | null>(null);
 
   const currentFile = fileList[currentIndex];
   // Calculate progress on 0 to 100 scale based on index + 1
@@ -83,6 +90,11 @@ const Session: React.FC<SessionProps> = ({
       if (e.repeat && isSwipeOrOpenKey) return;
 
       switch (e.key) {
+        case 'e':
+        case 'E':
+          e.preventDefault();
+          setShowLiveStack(prev => !prev);
+          break;
         case 'ArrowRight':
         case 'd':
         case 'D':
@@ -175,6 +187,7 @@ const Session: React.FC<SessionProps> = ({
         if (dropped && dropped.newStatus === 'deleted') {
           const droppedFile = updatedFiles.find(f => f.id === dropped.fileId);
           if (droppedFile) {
+            setCommittedToTrash({ action: dropped, file: droppedFile });
             void window.electronAPI.moveToTrash(droppedFile.path).catch(error => {
               console.error('Error moving to trash:', error);
             });
@@ -382,14 +395,29 @@ const Session: React.FC<SessionProps> = ({
             </div>
           </div>
 
-          <Tooltip text="Keyboard Shortcuts" shortcut="?" position="bottom">
-            <button 
-              onClick={() => setShowShortcuts(true)}
-              className="w-11 h-11 border border-white/5 rounded-xl bg-[#0d1320] flex items-center justify-center shadow-[0_5px_15px_rgba(0,0,0,0.3)] hover:bg-[#151f32] hover:border-[#00e5ff]/30 transition-all duration-200 group"
-            >
-              <Gamepad2 className="w-5 h-5 text-slate-500 group-hover:text-[#00e5ff] transition-colors" />
-            </button>
-          </Tooltip>
+          <div className="flex items-center gap-3">
+            <Tooltip text={showLiveStack ? 'Hide live stack HUD' : 'Show live stack HUD'} shortcut="HUD" position="bottom">
+              <button
+                onClick={() => setShowLiveStack(prev => !prev)}
+                className={`w-11 h-11 border rounded-xl flex items-center justify-center shadow-[0_5px_15px_rgba(0,0,0,0.3)] transition-all duration-200 group ${
+                  showLiveStack
+                    ? 'border-[#00e5ff]/50 bg-[#00e5ff]/10 hover:bg-[#00e5ff]/15'
+                    : 'border-white/5 bg-[#0d1320] hover:bg-[#151f32] hover:border-[#00e5ff]/30'
+                }`}
+              >
+                <Layers className={`w-5 h-5 transition-colors ${showLiveStack ? 'text-[#00e5ff]' : 'text-slate-500 group-hover:text-[#00e5ff]'}`} />
+              </button>
+            </Tooltip>
+
+            <Tooltip text="Keyboard Shortcuts" shortcut="?" position="bottom">
+              <button 
+                onClick={() => setShowShortcuts(true)}
+                className="w-11 h-11 border border-white/5 rounded-xl bg-[#0d1320] flex items-center justify-center shadow-[0_5px_15px_rgba(0,0,0,0.3)] hover:bg-[#151f32] hover:border-[#00e5ff]/30 transition-all duration-200 group"
+              >
+                <Gamepad2 className="w-5 h-5 text-slate-500 group-hover:text-[#00e5ff] transition-colors" />
+              </button>
+            </Tooltip>
+          </div>
         </header>
 
         {/* ── Center Target Progress ── */}
@@ -502,6 +530,26 @@ const Session: React.FC<SessionProps> = ({
               </motion.div>
             );
           })}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showLiveStack && (
+            <motion.aside
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="hidden xl:flex absolute right-6 top-0 bottom-0 items-center z-30 pointer-events-auto"
+            >
+              <LiveStackPanel
+                fileList={fileList}
+                currentIndex={currentIndex}
+                undoStack={undoStack}
+                maxUndoActions={settings.maxUndoActions}
+                committed={committedToTrash}
+              />
+            </motion.aside>
+          )}
         </AnimatePresence>
       </div>
 
@@ -781,6 +829,13 @@ const Session: React.FC<SessionProps> = ({
                       <span className="text-slate-300 text-[11px] uppercase font-bold tracking-wider">Undo Move</span>
                     </div>
                     <kbd className="kbd border-[#00e5ff]/30 text-[#00e5ff] bg-[#00e5ff]/5">Ctrl+Z</kbd>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-[#0a1120]/80 border border-white/5">
+                    <div className="flex items-center gap-3">
+                      <div className="px-2 py-1 rounded border border-[#00e5ff]/30 bg-[#00e5ff]/10 flex items-center justify-center font-black text-[#00e5ff] text-[10px]">E</div>
+                      <span className="text-slate-300 text-[11px] uppercase font-bold tracking-wider">Toggle Stack HUD</span>
+                    </div>
+                    <kbd className="kbd border-[#00e5ff]/30 text-[#00e5ff] bg-[#00e5ff]/5">E</kbd>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-xl bg-[#0a1120]/80 border border-white/5">
                     <div className="flex items-center gap-3">

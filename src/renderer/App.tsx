@@ -28,7 +28,8 @@ function App() {
     recursiveScan: true,
     showSystemFiles: false,
     maxUndoActions: 10,
-    previewCacheSize: 100
+    previewCacheSize: 100,
+    theme: 'dark'
   });
 
   // Load settings on mount
@@ -157,7 +158,7 @@ function App() {
   };
 
   return (
-    <div className="app-shell text-slate-200">
+    <div className="app-shell text-slate-200" data-theme={settings.theme}>
       {/* ── Deep Animated Background ── */}
       <div className="ambient-bg">
         <div className="orb-1" />

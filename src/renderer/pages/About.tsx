@@ -38,6 +38,7 @@ const keybinds = [
   { action: 'Skip File', keys: 'W / Up Arrow' },
   { action: 'Undo Last Action', keys: 'Ctrl + Z' },
   { action: 'Open Current File', keys: 'Space' },
+  { action: 'Toggle Stack HUD', keys: 'E' },
   { action: 'Exit / Close Dialog', keys: 'Escape' },
   { action: 'Shortcut Overlay', keys: '?' }
 ];
@@ -269,6 +270,26 @@ export default function About({ onBack, onOpenSettings }: AboutProps) {
                 </kbd>
               </div>
             ))}
+          </div>
+        </motion.section>
+
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45, duration: 0.35 }}
+          className="rounded-3xl border border-cyan-400/15 bg-[#0a1120]/70 backdrop-blur-xl p-8 mb-10"
+        >
+          <h3 className="text-xl font-black text-white mb-4 flex items-center gap-3">
+            <Gamepad2 className="w-5 h-5 text-cyan-300" />
+            Stack HUD (Incoming + Undo)
+          </h3>
+          <p className="text-sm text-slate-300/90 leading-relaxed max-w-3xl">
+            The Stack HUD is an optional live side panel that shows what’s coming next in your deck and what’s currently reversible in your undo buffer.
+            It updates in real time as you swipe, and it highlights when delete actions are committed to trash after they fall off your undo limit.
+          </p>
+          <div className="mt-4 rounded-xl border border-white/10 bg-black/25 px-4 py-3 inline-flex items-center gap-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Toggle</span>
+            <kbd className="text-[11px] font-mono px-2 py-1 rounded border border-cyan-400/40 text-cyan-300 bg-cyan-500/10">E</kbd>
           </div>
         </motion.section>
 

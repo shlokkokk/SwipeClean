@@ -18,11 +18,42 @@
   
   /* Game Controller Layout */
   --gc-btn-size: 64px;
+
+  /* App theme tokens (defaults = dark) */
+  --app-bg: #050505;
+  --app-surface: #05080f;
+  --app-panel: rgba(255, 255, 255, 0.02);
+  --app-panel-hover: rgba(255, 255, 255, 0.04);
+  --app-border: rgba(255, 255, 255, 0.10);
+  --app-text: #e2e8f0;
+  --app-text-muted: rgba(255, 255, 255, 0.40);
+  --app-selection: rgba(255, 255, 255, 0.20);
+  --app-strong: #ffffff;
+  --app-strong-contrast: #000000;
+  --app-overlay: rgba(0, 0, 0, 0.80);
+}
+
+[data-theme="light"] {
+  --gc-bg-color: #f7fafc;
+  --gc-surface: #ffffff;
+  --gc-accent: #00a9c2;
+
+  --app-bg: #f8fafc;
+  --app-surface: #ffffff;
+  --app-panel: rgba(2, 6, 23, 0.04);
+  --app-panel-hover: rgba(2, 6, 23, 0.07);
+  --app-border: rgba(2, 6, 23, 0.12);
+  --app-text: #0f172a;
+  --app-text-muted: rgba(15, 23, 42, 0.62);
+  --app-selection: rgba(2, 6, 23, 0.12);
+  --app-strong: #0f172a;
+  --app-strong-contrast: #ffffff;
+  --app-overlay: rgba(2, 6, 23, 0.65);
 }
 
 body {
   background-color: var(--gc-bg-color);
-  color: #e2e8f0;
+  color: var(--app-text);
   min-height: 100vh;
   overflow-x: hidden;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -53,6 +84,10 @@ body {
   pointer-events: none;
   z-index: 0;
   background: radial-gradient(circle at 50% 50%, #101828 0%, #080c14 100%);
+}
+
+[data-theme="light"] .ambient-bg {
+  background: radial-gradient(circle at 50% 50%, #ffffff 0%, #eef2ff 100%);
 }
 
 .orb-1, .orb-2, .orb-3 { display: none; }
