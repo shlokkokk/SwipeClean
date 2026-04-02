@@ -35,6 +35,10 @@ SwipeClean is a **desktop application** that transforms file cleanup from a chor
 
 ---
 
+
+https://github.com/user-attachments/assets/edb0622a-ad7e-4128-93d1-8e2f8936f5ed
+
+
 ## ⚡ Why SwipeClean?
 
 | Why You'll Love It |
