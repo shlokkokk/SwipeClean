@@ -1,17 +1,15 @@
 # Release Notes
 
-## v1.0.7
+## v1.0.9
 
-### Highlights
-- Tightened the live Stack HUD so overflow stays contained inside the undo history area.
-- Repositioned the Keyboard Shortcuts tooltip so it stays inside the viewport.
-- Kept the undo buffer toggle compact while preserving the full-history scroll behavior.
+### Added
+- Compact updater icon on Home (bottom-right).
+- Click-to-open updater panel with live status and download progress.
+- Slanted updater tooltip placement for better viewport visibility.
 
-### New
-- Undo buffer `View all` toggle now reveals the full action history inside its own scroll area.
-- Keyboard Shortcuts tooltip now anchors lower-left so it does not clip off-screen.
-- Trash commit notice no longer makes the outer HUD card scroll.
+### Changed
+- Light mode refreshed to a warmer off-white palette with cooler accent contrast.
 
-### Improved
-- Undo buffer header keeps the `View all` control on one line.
-- Session toolbar hover behavior is now kept within the visible viewport.
+### Fixed
+- Settings `Save Changes` now enables only when there is a real net change.
+- Reverting a setting back to its original value correctly disables `Save Changes` again.

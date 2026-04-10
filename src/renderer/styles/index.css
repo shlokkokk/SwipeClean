@@ -34,21 +34,21 @@
 }
 
 [data-theme="light"] {
-  --gc-bg-color: #f7fafc;
-  --gc-surface: #ffffff;
-  --gc-accent: #00a9c2;
+  --gc-bg-color: #efe2cf;
+  --gc-surface: #fff5e7;
+  --gc-accent: #1598ab;
 
-  --app-bg: #f8fafc;
-  --app-surface: #ffffff;
-  --app-panel: rgba(2, 6, 23, 0.04);
-  --app-panel-hover: rgba(2, 6, 23, 0.07);
-  --app-border: rgba(2, 6, 23, 0.12);
-  --app-text: #0f172a;
-  --app-text-muted: rgba(15, 23, 42, 0.62);
-  --app-selection: rgba(2, 6, 23, 0.12);
-  --app-strong: #0f172a;
-  --app-strong-contrast: #ffffff;
-  --app-overlay: rgba(2, 6, 23, 0.65);
+  --app-bg: #f3e7d4;
+  --app-surface: #fff6e8;
+  --app-panel: rgba(120, 88, 54, 0.08);
+  --app-panel-hover: rgba(120, 88, 54, 0.13);
+  --app-border: rgba(120, 88, 54, 0.2);
+  --app-text: #2b1f14;
+  --app-text-muted: rgba(43, 31, 20, 0.62);
+  --app-selection: rgba(21, 152, 171, 0.24);
+  --app-strong: #2b1f14;
+  --app-strong-contrast: #fff6e8;
+  --app-overlay: rgba(35, 25, 15, 0.55);
 }
 
 body {
@@ -87,7 +87,7 @@ body {
 }
 
 [data-theme="light"] .ambient-bg {
-  background: radial-gradient(circle at 50% 50%, #ffffff 0%, #eef2ff 100%);
+  background: radial-gradient(circle at 28% 24%, #fff7e9 0%, #f0dfc7 56%, #dce8f0 100%);
 }
 
 .orb-1, .orb-2, .orb-3 { display: none; }

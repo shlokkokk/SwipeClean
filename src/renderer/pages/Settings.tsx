@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Trash2, FolderTree, Eye, RotateCcw, Image as ImageIcon,
@@ -27,11 +27,21 @@ export default function Settings({ settings, onSave, onCancel }: SettingsProps) 
   const [showClearCacheConfirm, setShowClearCacheConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [cacheCleared, setCacheCleared] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
+
+  useEffect(() => {
+    setLocalSettings(settings);
+  }, [settings]);
+
+  const hasChanges =
+    localSettings.confirmBeforeDelete !== settings.confirmBeforeDelete ||
+    localSettings.recursiveScan !== settings.recursiveScan ||
+    localSettings.showSystemFiles !== settings.showSystemFiles ||
+    localSettings.maxUndoActions !== settings.maxUndoActions ||
+    localSettings.previewCacheSize !== settings.previewCacheSize ||
+    localSettings.theme !== settings.theme;
 
   const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     setLocalSettings(prev => ({ ...prev, [key]: value }));
-    setHasChanges(true);
   };
 
   const handleToggle = (key: keyof AppSettings) => {
@@ -45,7 +55,6 @@ export default function Settings({ settings, onSave, onCancel }: SettingsProps) 
 
   const handleResetDefaults = () => {
     setLocalSettings(DEFAULT_SETTINGS);
-    setHasChanges(true);
     setShowResetConfirm(false);
   };
 
