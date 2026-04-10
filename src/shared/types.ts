@@ -77,6 +77,15 @@ export interface AppSettings {
   theme: 'dark' | 'light';
 }
 
+// App update state shared between main and renderer
+export interface AppUpdateStatus {
+  status: 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'up-to-date' | 'error' | 'unsupported';
+  message: string;
+  currentVersion: string;
+  availableVersion?: string;
+  progress?: number;
+}
+
 // Stats for the session screen
 export interface SessionStats {
   totalFiles: number;
@@ -119,6 +128,8 @@ export interface IPCChannels {
   // App operations
   'app:getVersion': () => string;
   'app:platform': () => string;
+  'app:getUpdateStatus': () => Promise<AppUpdateStatus>;
+  'app:checkForUpdates': () => Promise<AppUpdateStatus>;
 }
 
 // Scan options

@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import type { AppUpdateStatus } from '../shared/types.js';
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
@@ -25,6 +26,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // App operations
   getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
   getPlatform: () => ipcRenderer.invoke('app:platform'),
+  getUpdateStatus: () => ipcRenderer.invoke('app:getUpdateStatus'),
+  checkForUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),
+  onUpdateStatus: (callback: (status: AppUpdateStatus) => void) => {
+    const listener = (_event: IpcRendererEvent, status: AppUpdateStatus) => {
+      callback(status);
+    };
+
+    ipcRenderer.on('app:updateStatus', listener);
+
+    return () => {
+      ipcRenderer.removeListener('app:updateStatus', listener);
+    };
+  },
 });
 
 // Type declaration for the exposed API
@@ -46,6 +60,9 @@ declare global {
       saveSettings: (settings: any) => Promise<void>;
       getAppVersion: () => Promise<string>;
       getPlatform: () => Promise<string>;
+      getUpdateStatus: () => Promise<AppUpdateStatus>;
+      checkForUpdates: () => Promise<AppUpdateStatus>;
+      onUpdateStatus: (callback: (status: AppUpdateStatus) => void) => () => void;
     };
   }
 }

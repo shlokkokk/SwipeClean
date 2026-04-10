@@ -263,6 +263,12 @@ body {
   transform: translateX(-28px);
 }
 
+.tooltip-top-left-slant {
+  bottom: calc(100% + 10px);
+  right: 0;
+  transform: translateX(-28px);
+}
+
 .tooltip-bottom-left-slant::before {
   content: "";
   position: absolute;
@@ -273,6 +279,19 @@ body {
   background: #0a0e17;
   border-top: 1px solid rgba(0, 229, 255, 0.2);
   border-left: 1px solid rgba(0, 229, 255, 0.2);
+  transform: rotate(45deg);
+}
+
+.tooltip-top-left-slant::before {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  right: 0.99px;
+  width: 10px;
+  height: 10px;
+  background: #0a0e17;
+  border-right: 1px solid rgba(0, 229, 255, 0.2);
+  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
   transform: rotate(45deg);
 }
 

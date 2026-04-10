@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FolderOpen, 
   Settings, 
@@ -7,11 +7,15 @@ import {
   Trash2, 
   Clock, 
   Folder,
-  Zap
+  Zap,
+  DownloadCloud,
+  CheckCircle2,
+  AlertTriangle,
+  X
 } from 'lucide-react';
 import Tooltip from '../components/Tooltip';
 import swipecleanLogo from '../assets/swipeclean_logo.png';
-import type { RecentFolder } from '@shared/types';
+import type { AppUpdateStatus, RecentFolder } from '@shared/types';
 
 interface HomeProps {
   onFolderSelect: (folderPath: string) => void;
@@ -23,10 +27,54 @@ const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings, onOpenAbout
   const [recentFolders, setRecentFolders] = useState<RecentFolder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [appVersion, setAppVersion] = useState('Loading...');
+  const [updateStatus, setUpdateStatus] = useState<AppUpdateStatus>({
+    status: 'idle',
+    message: 'Ready to check for updates.',
+    currentVersion: ''
+  });
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [isUpdatePanelOpen, setIsUpdatePanelOpen] = useState(false);
+
+  const sanitizeUpdateStatus = (status: AppUpdateStatus): AppUpdateStatus => {
+    // Hide dev-only updater wording from the UI to keep messaging clean.
+    if (status.message.toLowerCase().includes('disabled in development')) {
+      return {
+        ...status,
+        message: 'Ready to check for updates.'
+      };
+    }
+
+    return status;
+  };
 
   useEffect(() => {
     loadRecentFolders();
     loadAppVersion();
+
+    let isMounted = true;
+
+    void window.electronAPI.getUpdateStatus()
+      .then((status) => {
+        if (isMounted) {
+          setUpdateStatus(sanitizeUpdateStatus(status));
+        }
+      })
+      .catch((error) => {
+        console.error('Error loading update status:', error);
+      });
+
+    const unsubscribe = window.electronAPI.onUpdateStatus((status) => {
+      setUpdateStatus(sanitizeUpdateStatus(status));
+
+      if (status.status !== 'checking' && status.status !== 'downloading') {
+        setIsCheckingUpdate(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const loadRecentFolders = async () => {
@@ -65,6 +113,27 @@ const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings, onOpenAbout
     onFolderSelect(folderPath);
   };
 
+  const handleCheckForUpdates = async () => {
+    setIsCheckingUpdate(true);
+
+    try {
+      const status = await window.electronAPI.checkForUpdates();
+      setUpdateStatus(sanitizeUpdateStatus(status));
+
+      if (status.status !== 'checking' && status.status !== 'downloading') {
+        setIsCheckingUpdate(false);
+      }
+    } catch (error) {
+      console.error('Error checking for updates:', error);
+      setUpdateStatus((prev) => ({
+        ...prev,
+        status: 'error',
+        message: `Update check failed: ${(error as Error).message}`
+      }));
+      setIsCheckingUpdate(false);
+    }
+  };
+
   const getFolderIcon = (name: string) => {
     const lowerName = name.toLowerCase();
     if (lowerName.includes('download')) return <Trash2 className="w-4 h-4 text-red-400" />;
@@ -91,6 +160,26 @@ const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings, onOpenAbout
     const backChars = Math.floor(charsToShow * 0.65); // Show last 65% (preserves deep folder names)
     return path.substring(0, frontChars) + '...' + path.substring(path.length - backChars);
   };
+
+  const getUpdateLabel = () => {
+    if (updateStatus.status === 'downloading') return 'Downloading...';
+    if (updateStatus.status === 'checking' || isCheckingUpdate) return 'Checking...';
+    if (updateStatus.status === 'downloaded') return 'Restarting...';
+    return 'Update To Latest';
+  };
+
+  const getUpdateTone = () => {
+    if (updateStatus.status === 'error') return 'text-red-300';
+    if (updateStatus.status === 'up-to-date') return 'text-emerald-300';
+    if (updateStatus.status === 'downloaded') return 'text-emerald-300';
+    return 'text-slate-300';
+  };
+
+  const isUpdateBusy =
+    isCheckingUpdate ||
+    updateStatus.status === 'checking' ||
+    updateStatus.status === 'downloading' ||
+    updateStatus.status === 'downloaded';
 
   return (
     <div className="h-full w-full overflow-y-auto overflow-x-hidden relative custom-scrollbar">
@@ -125,15 +214,94 @@ const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings, onOpenAbout
         </Tooltip>
       </motion.div>
 
-      {/* ── Version - Bottom Right ── */}
+      {/* ── Compact Updater - Bottom Right ── */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="fixed bottom-6 right-6 lg:bottom-8 lg:right-8 z-30 pointer-events-none"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 lg:bottom-8 lg:right-8 z-30 pointer-events-auto"
       >
-        <div className="text-[10px] lg:text-[11px] font-bold text-slate-600 tracking-[0.2em] uppercase">
-          Build {appVersion}
+        <div className="flex items-end justify-end">
+          <AnimatePresence>
+            {isUpdatePanelOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className="absolute bottom-16 right-0 w-[min(92vw,400px)] rounded-2xl border border-white/15 bg-slate-950/85 backdrop-blur-xl shadow-2xl ring-1 ring-inset ring-white/10 p-4 sm:p-5"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="text-[10px] lg:text-[11px] font-bold text-slate-500 tracking-[0.2em] uppercase">
+                    Build {appVersion}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsUpdatePanelOpen(false)}
+                    aria-label="Close update panel"
+                    className="p-1.5 rounded-lg border border-white/10 text-slate-400 hover:text-white hover:border-white/25 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <p className={`mt-3 text-[12px] sm:text-[13px] font-medium leading-relaxed ${getUpdateTone()}`}>
+                  {updateStatus.message}
+                  {updateStatus.availableVersion ? ` (v${updateStatus.availableVersion})` : ''}
+                </p>
+
+                {typeof updateStatus.progress === 'number' && updateStatus.status === 'downloading' && (
+                  <div className="mt-3">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800/80 border border-slate-700/80">
+                      <motion.div
+                        className="h-full bg-cyan-400"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.max(0, Math.min(100, updateStatus.progress))}%` }}
+                        transition={{ type: 'tween', ease: 'easeOut', duration: 0.25 }}
+                      />
+                    </div>
+                    <div className="mt-1.5 text-[11px] text-slate-400 font-semibold tracking-wide">
+                      {Math.round(updateStatus.progress)}%
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400 uppercase tracking-[0.14em]">
+                    {updateStatus.status === 'error' ? (
+                      <AlertTriangle className="w-3.5 h-3.5 text-red-300" />
+                    ) : (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
+                    )}
+                    Status
+                  </div>
+
+                  <button
+                    onClick={handleCheckForUpdates}
+                    disabled={isUpdateBusy}
+                    className={`px-3.5 py-2 text-[11px] sm:text-[12px] font-bold uppercase tracking-[0.12em] rounded-xl border transition-all duration-300 ${
+                      isUpdateBusy
+                        ? 'bg-transparent text-slate-500 border-slate-700/80 cursor-not-allowed opacity-70'
+                        : 'bg-cyan-500/90 text-slate-950 border-cyan-300/80 hover:bg-cyan-300 hover:text-slate-950'
+                    }`}
+                  >
+                    {getUpdateLabel()}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <Tooltip text="Download and install updates" position="top-left-slant">
+            <button
+              type="button"
+              aria-label="Open updater"
+              onClick={() => setIsUpdatePanelOpen((prev) => !prev)}
+              className="h-12 w-12 rounded-2xl border border-white/20 bg-slate-950/75 backdrop-blur-xl shadow-xl ring-1 ring-inset ring-white/10 flex items-center justify-center text-slate-300 hover:text-cyan-300 hover:border-cyan-300/60 transition-all duration-300"
+            >
+              <DownloadCloud className="w-5 h-5" />
+            </button>
+          </Tooltip>
         </div>
       </motion.div>
 
