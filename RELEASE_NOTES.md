@@ -1,5 +1,15 @@
 # Release Notes
 
+## v1.1.2
+
+### Fixed
+- Resolved updater download 404 by enforcing a consistent installer artifact name format.
+- Updated release workflow download guidance to match the actual Windows installer filename.
+- Fixed long updater error messages overflowing the Home update panel.
+
+### Improved
+- Home update panel now wraps and scrolls long status/error text cleanly.
+
 ## v1.1.0
 
 ### Added
