@@ -62,8 +62,8 @@ const Session: React.FC<SessionProps> = ({
   } | null>(null);
 
   const currentFile = fileList[currentIndex];
-  // Calculate progress on 0 to 100 scale based on index + 1
-  const progress = files.length > 0 ? ((currentIndex) / files.length) * 100 : 0;
+  // Show progress based on the file currently being reviewed.
+  const progress = files.length > 0 ? ((currentIndex + 1) / files.length) * 100 : 0;
   const folderName = folderPath.split(/[/\\]/).pop() || 'Unknown';
 
   // Auto-dismiss the first-time guide
