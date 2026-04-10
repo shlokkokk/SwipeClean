@@ -245,7 +245,7 @@ const Home: React.FC<HomeProps> = ({ onFolderSelect, onOpenSettings, onOpenAbout
                   </button>
                 </div>
 
-                <p className={`mt-3 text-[12px] sm:text-[13px] font-medium leading-relaxed ${getUpdateTone()}`}>
+                <p className={`mt-3 text-[12px] sm:text-[13px] font-medium leading-relaxed break-all max-h-24 overflow-y-auto pr-1 ${getUpdateTone()}`}>
                   {updateStatus.message}
                   {updateStatus.availableVersion ? ` (v${updateStatus.availableVersion})` : ''}
                 </p>

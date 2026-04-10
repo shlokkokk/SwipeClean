@@ -1,6 +1,6 @@
 {
   "name": "swipeclean",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Gamified file cleanup desktop application with Tinder-style swiping",
   "main": "dist/main/main.js",
   "author": "SwipeClean",
@@ -84,6 +84,7 @@
       ]
     },
     "nsis": {
+      "artifactName": "${productName}-Setup-${version}.${ext}",
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico",
       "installerHeaderIcon": "assets/icon.ico"
