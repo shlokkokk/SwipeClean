@@ -8,13 +8,14 @@ Clean up any folder while having fun! SwipeClean gamifies file management with a
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)]()
 [![GitHub](https://img.shields.io/badge/GitHub-shlokkokk-black?logo=github)](https://github.com/shlokkokk/SwipeClean)
 
-## 🆕 Latest Release (v1.0.7)
+## 🆕 Latest Release (v1.1.2)
 
 ### Highlights
-- 📚 **Live Stack HUD overflow fix** keeps the undo history contained inside its own scroll area
-- ⌨️ **Keyboard Shortcuts tooltip** now opens lower-left so it stays on screen
-- 🧭 **Undo buffer toggle** stays compact on one line while still exposing the full history
-- 🧩 **Trash commit notice** no longer makes the outer HUD card scroll
+- 🛠️ **Fixed Updater 404s** — Enforced consistent installer artifact naming for seamless auto-updates.
+- 📱 **Clean Update Panel** — Resolved text overflow issues in the Home update status with a new wrapping and scrolling logic.
+- 🔄 **Live Release Sync** — Aligned download guidance with actual Windows artifact filenames.
+- ✨ **Warm Light Mode** — Refreshed the light theme with a warmer off-white palette and high-contrast sapphire accents.
+- 🛡️ **Precise Progress** — Session progress now tracks the active file with 100% precision.
 
 ---
 
